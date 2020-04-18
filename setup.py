@@ -18,17 +18,17 @@ GAS_PRICE = utils.get_actual_gas_price(w3)
 CONTRACTS = {'token':  ('contracts/ERC20Token.sol', 'ERC20Token'),
              'wallet': ('contracts/ServiceProviderWallet.sol', 'ServiceProviderWallet'),
              'mgmt':   ('contracts/ManagementContract.sol', 'ManagementContract'),
-             'battery':('contracts/BatteryManagement.sol', 'BatteryManagement')}
+             'battery': ('contracts/BatteryManagement.sol', 'BatteryManagement')}
 
 
-def _deploy_contract_and_wait(_actor:str, _contract_src_file:str, _contract_name:str, args=None): # return type?
+def _deploy_contract_and_wait(_actor: str, _contract_src_file: str, _contract_name: str, args=None): # return type?
     tx_hash = _deploy_contract(_actor, _contract_src_file, _contract_name, args)
     receipt = web3.eth.wait_for_transaction_receipt(w3, tx_hash, 120, 0.1)
 
     return receipt.contractAdress
 
 
-def _deploy_contract(_actor:str, _contract_src_file:str, _contract_name:str, args=None): # return type?
+def _deploy_contract(_actor: str, _contract_src_file: str, _contract_name: str, args=None): # return type?
     compiled = utils.compile_contracts(_contract_src_file)
     contract = utils.initialize_contract_factory(w3, compiled, _contract_src_file + ":" + _contract_name)
 
@@ -42,20 +42,21 @@ def create_parser() -> argparse.ArgumentParser:
         description = 'Battery authentication system tool'
     )
 
-    parser.add_argument('--new', type=str, required=False,
+    parser.add_argument(
+        '--new', type=str, required=False,
         help='Add account for software development company'
     )
 
     parser.add_argument('--setup', type=float, required=False,
         help='Deploy contract(s) to the chain. Set fee (in ether)' 
-             'for registration of one battery, which reflects'
-             'vendor registration fee'
+              'for registration of one battery, which reflects'
+              'vendor registration fee'
     )
 
     return parser
 
 
-def _wait_for_validation(_w3:Web3, _tx_dict:dict, _tmout:int=120) -> dict:
+def _wait_for_validation(_w3: Web3, _tx_dict: dict, _tmout: int = 120) -> dict:
     receipts_list = {}
     
     for i in _tx_dict.keys():
@@ -78,7 +79,7 @@ def _wait_for_validation(_w3:Web3, _tx_dict:dict, _tmout:int=120) -> dict:
     return receipts_list
 
 
-def _create_mgmt_contract_db(_contract_address:str) -> None:
+def _create_mgmt_contract_db(_contract_address: str) -> None:
     data = {'mgmt_contract': _contract_address}
     utils.write_data_base(data, MGMT_CONTRACT_DB_NAME)
 
