@@ -15,7 +15,7 @@ def write_data_base(_data: dict, _file_name: str) -> None:
 
 
 def unlock_account(_w3: Web3, _account: str, _password: str) -> None:
-    _w3.personal.unlockAccount(_account, _password, 60)
+    _w3.geth.personal.unlockAccount(_account, _password, 60)
 
 
 def create_new_account(_w3: Web3, _password: str, _file_name: str) -> str:
