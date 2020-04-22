@@ -1,8 +1,9 @@
 import os
 import json
 from typing import Union
+import web3
 from web3 import Web3
-from solc import compile_files
+from solcx import compile_files
 
 
 def get_actual_gas_price(_w3: Web3) -> float:
