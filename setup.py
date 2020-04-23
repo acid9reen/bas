@@ -2,6 +2,7 @@ import sys
 import web3
 from web3 import Web3
 from web3._utils.threads import Timeout
+from web3.middleware import geth_poa_middleware
 from random import random
 import argparse
 import utils
@@ -20,6 +21,9 @@ CONTRACTS = {'token':  ('contracts/ERC20Token.sol', 'ERC20Token'),
              'mgmt':   ('contracts/ManagementContract.sol', 'ManagementContract'),
              'battery': ('contracts/BatteryManagement.sol', 'BatteryManagement')}
 
+# configure provider to work with PoA chains
+w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+
 
 def _deploy_contract_and_wait(_actor: str, _contract_src_file: str, _contract_name: str, args=None): # return type?
     tx_hash = _deploy_contract(_actor, _contract_src_file, _contract_name, args)
@@ -28,16 +32,35 @@ def _deploy_contract_and_wait(_actor: str, _contract_src_file: str, _contract_na
     return receipt.contractAdress
 
 
-def _deploy_contract(_actor: str, _contract_src_file: str, _contract_name: str, args=None): # return type?
+def _deploy_contract(_actor: str, _contract_src_file: str, _contract_name: str, args=None):
+    """
+    Function definition ???
+
+    :param str _actor: The person transacting the contract
+    :param str _contract_src_file: Path to contract source code
+    :param str _cantract_name: Contract name
+
+    :return: ?
+    :rtype: ?
+
+    """
+
     compiled = utils.compile_contracts(_contract_src_file)
     contract = utils.initialize_contract_factory(w3, compiled, _contract_src_file + ":" + _contract_name)
 
     tx = {'from': _actor, 'gasPrice': GAS_PRICE}
 
-    return contract.deploy(transaction=tx, args=args)
+    return contract.constructor().transact(transaction=tx)
 
 
 def create_parser() -> argparse.ArgumentParser:
+    """
+    Create cli argument parser
+
+    :return: Parser
+    :rtype: argparse.ArgumentParser
+    """
+
     parser = argparse.ArgumentParser(
         description = 'Battery authentication system tool'
     )
@@ -68,10 +91,10 @@ def _wait_for_validation(_w3: Web3, _tx_dict: dict, _tmout: int = 120) -> dict:
         while(confirmations > 0):
             for i in _tx_dict.keys():
                 if receipts_list[i][1] is None:
-                    txn_reciept = _w3.eth.getTransactionReceipt(receipts_list[i][0])
+                    tx_reciept = _w3.eth.Eth.getTransactionReceipt(receipts_list[i][0])
 
-                    if txn_reciept is not None:
-                        receipts_list[i][1] = txn_reciept
+                    if tx_reciept is not None:
+                        receipts_list[i][1] = tx_reciept
                         confirmations -= 1
                 
                 tm.sleep(random())
