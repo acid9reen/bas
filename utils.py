@@ -58,7 +58,18 @@ def get_account_from_db(_file_name: str) -> Union[str, None]:
     return data["account"]
 
 
-def initialize_contract_factory(_w3: Web3, _compiled_contracts, _key: str, _address: str = None):  # return type?
+def initialize_contract_factory(_w3: Web3, _compiled_contracts, _key: str, _address: str = None):
+    """
+    Initialize contract
+
+    :params Web3 _w3: Web3 instance
+    :params _compiled_contracts: Compiled contracts
+    :params str _key: Contract path + name
+    :params str _address: Target adsress
+    :return: Contract instance
+    :rtype: Contract
+    """
+    
     if _address is None:
         contract = _w3.eth.contract(
             abi=_compiled_contracts[_key]['abi'],
