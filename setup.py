@@ -91,7 +91,7 @@ def _wait_for_validation(_w3: Web3, _tx_dict: dict, _tmout: int = 120) -> dict:
         while(confirmations > 0):
             for i in _tx_dict.keys():
                 if receipts_list[i][1] is None:
-                    tx_reciept = _w3.eth.Eth.getTransactionReceipt(receipts_list[i][0])
+                    tx_reciept = _w3.eth.getTransactionReceipt(receipts_list[i][0])
 
                     if tx_reciept is not None:
                         receipts_list[i][1] = tx_reciept
@@ -126,14 +126,14 @@ def setup(_service_fee:float) -> None:
         tx_dict[i] = _deploy_contract(actor, CONTRACTS[i][0], CONTRACTS[i][1])
 
     # wait for deployment transactions validation
-    receipt_dict = _wait_for_validation(web3, tx_dict)
+    receipt_dict = _wait_for_validation(w3, tx_dict)
 
-    currency_token_contract_addr = receipt_dict['token'][1].contractAdress
-    service_provider_wallet_addr = receipt_dict['wallet'][1].contractAdress
+    currency_token_contract_addr = receipt_dict['token'][1]['contractAddress']
+    service_provider_wallet_addr = receipt_dict['wallet'][1]['contractAddress']
 
     if (receipt_dict['token'][1] is not None) and (receipt_dict['wallet'][1] is not None):
-        currency_token_contract_addr = receipt_dict['token'][1].contractAdress
-        service_provider_wallet_addr = receipt_dict['wallet'][1].contractAdress
+        currency_token_contract_addr = receipt_dict['token'][1]['contractAddress']
+        service_provider_wallet_addr = receipt_dict['wallet'][1]['contractAddress']
 
         if service_provider_wallet_addr is not None:
             # deploy managment contract
