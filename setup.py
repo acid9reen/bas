@@ -25,14 +25,14 @@ CONTRACTS = {'token':  ('contracts/ERC20Token.sol', 'ERC20Token'),
 w3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
-def _deploy_contract_and_wait(_actor: str, _contract_src_file: str, _contract_name: str, args=None): # return type?
-    tx_hash = _deploy_contract(_actor, _contract_src_file, _contract_name, args)
+def _deploy_contract_and_wait(_actor: str, _contract_src_file: str, _contract_name: str, *args): # return type?
+    tx_hash = _deploy_contract(_actor, _contract_src_file, _contract_name, *args)
     receipt = web3.eth.wait_for_transaction_receipt(w3, tx_hash, 120, 0.1)
 
-    return receipt.contractAdress
+    return receipt["contractAddress"]
 
 
-def _deploy_contract(_actor: str, _contract_src_file: str, _contract_name: str, args=None):
+def _deploy_contract(_actor: str, _contract_src_file: str, _contract_name: str, *args):
     """
     Function definition ???
 
@@ -50,7 +50,7 @@ def _deploy_contract(_actor: str, _contract_src_file: str, _contract_name: str, 
 
     tx = {'from': _actor, 'gasPrice': GAS_PRICE}
 
-    return contract.constructor().transact(transaction=tx)
+    return contract.constructor(*args).transact(transaction=tx)
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -138,23 +138,23 @@ def setup(_service_fee:float) -> None:
         if service_provider_wallet_addr is not None:
             # deploy managment contract
             mgmt_contract_addr = _deploy_contract_and_wait(actor, CONTRACTS['mgmt'][0], CONTRACTS['mgmt'][1], 
-                                                           [service_provider_wallet_addr, service_fee])
+                                                           service_provider_wallet_addr, service_fee)
             
             if mgmt_contract_addr is not None:
                 _create_mgmt_contract_db(mgmt_contract_addr)
 
                 # deploy battery managment
                 battery_mgmt_contract_addr = _deploy_contract_and_wait(actor, CONTRACTS['battery'][0], CONTRACTS['battery'][1],
-                                                                       [mgmt_contract_addr, currency_token_contract_addr])
+                                                                       mgmt_contract_addr, currency_token_contract_addr)
                 
                 if battery_mgmt_contract_addr is not None:
                     compiled_contract = utils.compile_contracts(CONTRACTS['mgmt'][0])
-                    mgmt_contract = utils.initialize_contract_factory(web3, compiled_contract,
+                    mgmt_contract = utils.initialize_contract_factory(w3, compiled_contract,
                                                                       CONTRACTS['mgmt'][0] + ':' + CONTRACTS['mgmt'][1],
                                                                       mgmt_contract_addr)
 
                     tx_hash = mgmt_contract.functions.setBatteryManagementContract(battery_mgmt_contract_addr).transact({'from': actor, 'gasPrice': GAS_PRICE})
-                    receipt = web3.eth.wait_for_transaction_receipt(web3, tx_hash, 120, 0.1)
+                    receipt = web3.eth.wait_for_transaction_receipt(w3, tx_hash, 120, 0.1)
 
                     if receipt.status == 1:
                         print('Management contract:', mgmt_contract_addr, sep=' ')
