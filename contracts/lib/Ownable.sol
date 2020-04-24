@@ -5,10 +5,10 @@ pragma solidity ^0.6.4;
  * @dev The Ownable contract has an owner address, and provides basic authorization control
  * functions, this simplifies the implementation of "user permissions".
  * Ref: Taken from
- *      https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol
+ *      https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/contracts/ownership/Ownable.sol
  */
 contract Ownable {
-  address private _owner;
+  address public owner;
 
   event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
@@ -16,22 +16,15 @@ contract Ownable {
    * @dev The Ownable constructor sets the original `owner` of the contract to the sender
    * account.
    */
-  constructor() public{
-    _owner = msg.sender;
-  }
-
-  /**
-   * @dev Returns the address of the current owner.
-   */
-  function owner() public view returns (address) {
-      return _owner;
+  constructor() public {
+    owner = msg.sender;
   }
 
   /**
    * @dev Throws if called by any account other than the owner.
    */
   modifier onlyOwner() {
-    require(msg.sender == _owner, "Ownable: caller is not the owner");
+    require(msg.sender == owner);
     _;
   }
 
@@ -40,8 +33,9 @@ contract Ownable {
    * @param newOwner The address to transfer ownership to.
    */
   function transferOwnership(address newOwner) public onlyOwner {
-    require(newOwner != address(0), "Ownable: new owner is the zero address");
-    emit OwnershipTransferred(_owner, newOwner);
-    _owner = newOwner;
+    require(newOwner != address(0));
+    emit OwnershipTransferred(owner, newOwner);
+    owner = newOwner;
   }
 }
+
