@@ -12,18 +12,22 @@ contract BatteryManagement {
     // - владелец батареи
     // - адрес далегата
     // - идентификатор батареи, которой может распоряжаться делегат
-    event Approval(address indexed, address indexed, bytes20);
+   // event Approval(address indexed, address indexed, bytes20);
 
     // Для оповещения после создания контракта на замену батарей
     // - адрес контракта
-    event NewDeal(address);
+    //event NewDeal(address);
 
     // Конструктор контракта
     // - адрес контракта, управляющего списком вендоров.
     // - адрес контракта, управляющего токенами, в которых будет
     //   происходить расчет за замену батарей.
-    constructor(address, address) public {}
+    constructor(address _mgmt, address _erc20) public {
+       // managementContract = ManagementContract(_mgmt);
+        //erc20 = ERC20Token(_erc20);
+    }
 
+/*
     // Создает новую батарею
     // Владельцем батареи назначается его текущий создатель.
     // Создание нового батареи может быть доступно только
@@ -42,7 +46,8 @@ contract BatteryManagement {
     // только текущим владельцем
     // - адрес нового владельца
     // - список идентификаторов батарей
-    function transfer(address, bytes20[]) public;
+
+    function transfer(address, bytes20) public;
 
     // Определяет по статусу батареи ее идентификатор, затем текущего владельца.
     // И меняет владельца батаереи. Может быть вызвана только текущим владельцем
@@ -174,4 +179,5 @@ contract BatteryManagement {
     // Возвращает адрес контракта, который управляет токенами, использующимися
     // в качестве внутренней валюты при совершении сделок по замене батарей.
     function erc20() public view returns(address);
+*/
 }

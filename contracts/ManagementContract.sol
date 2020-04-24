@@ -4,23 +4,28 @@ import "./ServiceProviderWallet.sol";
 import "./BatteryManagement.sol";
 import "./lib/Ownable.sol";
 
-contract ManagementContract {
+contract ManagementContract is Ownable {
     // Для оповещения регистрации нового производителя
     // - адрес аккаунта из-под которого проходила регистрация
     // - идентификатор производителя
-    event Vendor(address, bytes4);
+    //event Vendor(address, bytes4);
 
     // Для оповещения о создании новой батареи
     // - идентификатор производителя
     // - идентификатор батареи
-    event NewBattery(bytes4, bytes20);
+    //event NewBattery(bytes4, bytes20);
 
     // Конструктор контракта
     // - адрес контракта, ответственного за накопление криптовалюты,
     //   перечисляемой в качестве депозита за использование сервиса.
     // - сумму сбора за выпуск одной батареи
-    constructor(address, uint256) public {}
+    //uint256 BatFee;
+    constructor(address _wallet, uint256 _batfee) public{
+        //BatFee = _batfee;
+        //walletContract = ServiceProviderWallet(_wallet);
+    }
 
+/*
     // Устанавливает адрес для контракта, ответственного за
     // управление информацией о батареях.
     // Доступен только создателю management контракта
@@ -30,7 +35,7 @@ contract ManagementContract {
     // Регистрирует вендора, если при вызове метода перечисляется
     // достаточно средств.
     // - наименование производителя
-    function registerVendor(bytes) public payable;
+    function registerVendor(bytes20) public payable;
 
     // Возвращает размер текущий депозит вендора
     function vendorDeposit(address) public view returns(uint256);
@@ -40,7 +45,7 @@ contract ManagementContract {
     // батарей баланс уменьшается соответственно количеству батареи и
     // цене, установленной для данного производителя на текущий момент.
     // - идентификаторы батарей
-    function registerBatteries(bytes20[]) public payable;
+    function registerBatteries(bytes20) public payable;
 
     // Возвращает наименование производителя по его идентификатору
     function vendorNames(bytes4) public view returns(bytes4);
@@ -89,4 +94,6 @@ contract ManagementContract {
     // Регистрация просиходит только если данный адрес уже не был зарегистрирован
     // в качестве сервис центра или электромобиля.
     function registerCar() public;
+    */
 }
+
