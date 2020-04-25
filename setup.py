@@ -25,7 +25,18 @@ CONTRACTS = {'token':  ('contracts/ERC20Token.sol', 'ERC20Token'),
 w3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
-def _deploy_contract_and_wait(_actor: str, _contract_src_file: str, _contract_name: str, *args): # return type?
+def _deploy_contract_and_wait(_actor: str, _contract_src_file: str, _contract_name: str, *args):
+    """
+    Deploy contract to the blockchain
+
+    :param str _actor:The person transacting the contract
+    :param str _contract_src_file: Path to contract source code
+    :param str _cantract_name: Contract name
+    :param list args: Contract's function arguments
+    :return: contract address
+    :rtype: str
+    """
+
     tx_hash = _deploy_contract(_actor, _contract_src_file, _contract_name, *args)
     receipt = web3.eth.wait_for_transaction_receipt(w3, tx_hash, 120, 0.1)
 
@@ -39,7 +50,7 @@ def _deploy_contract(_actor: str, _contract_src_file: str, _contract_name: str, 
     :param str _actor: The person transacting the contract
     :param str _contract_src_file: Path to contract source code
     :param str _cantract_name: Contract name
-
+    :param list args: Contract's function arguments
     :return: ?
     :rtype: ?
 
