@@ -101,7 +101,7 @@ def setup(_w3: Web3, _service_fee: float) -> Union[dict, None]:
                                                                       CONTRACTS['mgmt'][0] + ':' + CONTRACTS['mgmt'][1],
                                                                       mgmt_contract_addr)
 
-                    tx_hash = mgmt_contract.functions.setBatteryManagementContract(battery_mgmt_contract_addr).transact({'from': actor, 'gasPrice': GAS_PRICE})
+                    tx_hash = mgmt_contract.functions.setBatteryManagementContract(battery_mgmt_contract_addr).transact({'from': actor, 'gasPrice': utils.get_actual_gas_price(_w3)})
                     receipt = web3.eth.wait_for_transaction_receipt(_w3, tx_hash, 120, 0.1)
 
                     if receipt.status == 1:
@@ -129,9 +129,6 @@ def main() -> None:
 
     # configure provider to work with PoA chains
     w3.middleware_onion.inject(geth_poa_middleware, layer=0)
-
-    global GAS_PRICE
-    GAS_PRICE = utils.get_actual_gas_price(w3)
 
     parser = create_parser()
     args = parser.parse_args()
