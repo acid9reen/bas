@@ -13,7 +13,7 @@ MGMT_CONTRACT_DB_NAME = 'database.json'
 
 def _deploy_contract_and_wait(_w3: Web3, _actor: str, _contract_src_file: str, _contract_name: str, *args):
     """
-    Deploy contract to the blockchain
+    Deploy contract to the blockchain and wait it's inclusion to a block
 
     :param str _actor:The person transacting the contract
     :param str _contract_src_file: Path to contract source code
@@ -31,16 +31,15 @@ def _deploy_contract_and_wait(_w3: Web3, _actor: str, _contract_src_file: str, _
 
 def _deploy_contract(_w3: Web3, _actor: str, _contract_src_file: str, _contract_name: str, *args):
     """
-    Function definition ???
+    Deploy contract to the blockchain
 
     :param Web3 _w3: Web3 instance
     :param str _actor: The person transacting the contract
     :param str _contract_src_file: Path to contract source code
     :param str _cantract_name: Contract name
     :param list args: Contract's function arguments
-    :return: ?
-    :rtype: ?
-
+    :return: Deployed contract
+    :rtype: Contract
     """
 
     compiled = compile_contracts(_contract_src_file)
@@ -52,6 +51,16 @@ def _deploy_contract(_w3: Web3, _actor: str, _contract_src_file: str, _contract_
 
 
 def _wait_for_validation(_w3: Web3, _tx_dict: dict, _tmout: int = 120) -> dict:
+    """
+    Wait contract's inclusion to a block
+
+    :params Web3 _w3: Web3 instance
+    :params dict _tx_dict: Transactions waiting for inclusion
+    :params int: _tmout: Timeout for inclusion to a block in seconds
+    :return: Receipts
+    :rtype: dict
+    """
+
     receipts_list = {}
     
     for i in _tx_dict.keys():
@@ -88,19 +97,55 @@ def _create_mgmt_contract_db(_contract_address: str) -> None:
 
 
 def get_actual_gas_price(_w3: Web3) -> float:
+    """
+    Get actual gas price
+
+    :param Web3 _w3: Web3 instance
+    :return: Gas price
+    :rtype: float
+    """
+
     return _w3.toWei(1, 'gwei')
 
 
 def write_data_base(_data: dict, _file_name: str) -> None:
+    """
+    Write dictionary to specific json file
+
+    :param dict _data: Data to write
+    :param str _file_name: Name of the file for writing
+    :return: Nothing
+    :rtype: None
+    """
+
     with open(_file_name, 'w') as out:
         json.dump(_data, out)
 
 
 def unlock_account(_w3: Web3, _account: str, _password: str) -> None:
+    """
+    Unlock account for transactions
+
+    :param Web3 _w3: Web3 instance
+    :param str _account: Account to unlock
+    :param str _password: Password for the account
+    :return: Nothing
+    :rtype: None
+    """
     _w3.geth.personal.unlockAccount(_account, _password, 60)
 
 
 def create_new_account(_w3: Web3, _password: str, _file_name: str) -> str:
+    """
+    Create new account and write it to database
+
+    :param Web3 _w3: Web3 instance
+    :param str _password: Password for the new account
+    :param str _file_name: Name of the database file for writing
+    :return: Account address in blockchain
+    :rtype: str 
+    """
+
     if os.path.exists(_file_name):
         os.remove(_file_name)
 
@@ -112,6 +157,14 @@ def create_new_account(_w3: Web3, _password: str, _file_name: str) -> str:
 
 
 def open_data_base(_file_name: str) -> Union[dict, None]:
+    """
+    Load data from the database
+
+    :param str _file_name: Database file name
+    :return: None if file does not exist or loaded from the file data
+    :rtype: None/dict
+    """
+
     if os.path.exists(_file_name):
         with open(_file_name) as file:
             return json.load(file)
@@ -120,7 +173,15 @@ def open_data_base(_file_name: str) -> Union[dict, None]:
         return None
 
 
-def compile_contracts(_files: Union[str, list]):  # return type?
+def compile_contracts(_files: Union[str, list]):
+    """
+    Compile contract file/files
+
+    :param str/list _files: Files to compile
+    :return: Compiled files
+    :rtype: dict
+    """
+
     if isinstance(_files, str):
         contracts = compile_files([_files])
 
@@ -131,6 +192,14 @@ def compile_contracts(_files: Union[str, list]):  # return type?
 
 
 def get_account_from_db(_file_name: str) -> Union[str, None]:
+    """
+    Get account address from database
+
+    :params str _file_name: Name of the database file
+    :return: None if file does not exist or account address
+    :rtype: None/str
+    """
+
     data = open_data_base(_file_name)
     
     if data is None:
