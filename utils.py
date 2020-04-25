@@ -1,9 +1,90 @@
 import os
 import json
 from typing import Union
+from random import random
 import web3
 from web3 import Web3
+from web3._utils.threads import Timeout
 from solcx import compile_files
+
+
+MGMT_CONTRACT_DB_NAME = 'database.json'
+
+
+def _deploy_contract_and_wait(_w3: Web3, _actor: str, _contract_src_file: str, _contract_name: str, *args):
+    """
+    Deploy contract to the blockchain
+
+    :param str _actor:The person transacting the contract
+    :param str _contract_src_file: Path to contract source code
+    :param str _cantract_name: Contract name
+    :param list args: Contract's function arguments
+    :return: contract address
+    :rtype: str
+    """
+
+    tx_hash = _deploy_contract(_w3, _actor, _contract_src_file, _contract_name, *args)
+    receipt = web3.eth.wait_for_transaction_receipt(_w3, tx_hash, 120, 0.1)
+
+    return receipt["contractAddress"]
+
+
+def _deploy_contract(_w3: Web3, _actor: str, _contract_src_file: str, _contract_name: str, *args):
+    """
+    Function definition ???
+
+    :param Web3 _w3: Web3 instance
+    :param str _actor: The person transacting the contract
+    :param str _contract_src_file: Path to contract source code
+    :param str _cantract_name: Contract name
+    :param list args: Contract's function arguments
+    :return: ?
+    :rtype: ?
+
+    """
+
+    compiled = compile_contracts(_contract_src_file)
+    contract = initialize_contract_factory(_w3, compiled, _contract_src_file + ":" + _contract_name)
+
+    tx = {'from': _actor, 'gasPrice': get_actual_gas_price(_w3)}
+
+    return contract.constructor(*args).transact(transaction=tx)
+
+
+def _wait_for_validation(_w3: Web3, _tx_dict: dict, _tmout: int = 120) -> dict:
+    receipts_list = {}
+    
+    for i in _tx_dict.keys():
+        receipts_list[i] = [_tx_dict[i], None]
+    
+    confirmations = len(list(_tx_dict))
+
+    with Timeout(_tmout) as tm:
+        while(confirmations > 0):
+            for i in _tx_dict.keys():
+                if receipts_list[i][1] is None:
+                    tx_reciept = _w3.eth.getTransactionReceipt(receipts_list[i][0])
+
+                    if tx_reciept is not None:
+                        receipts_list[i][1] = tx_reciept
+                        confirmations -= 1
+                
+                tm.sleep(random())
+    
+    return receipts_list
+
+
+def _create_mgmt_contract_db(_contract_address: str) -> None:
+    """
+    Create json file with Management contract address
+
+    :params str _contract_address: Managment contract address in blockchain
+    :return: Nothing
+    :rtype: None
+    """
+
+    data = {'mgmt_contract': _contract_address}
+    write_data_base(data, MGMT_CONTRACT_DB_NAME)
 
 
 def get_actual_gas_price(_w3: Web3) -> float:

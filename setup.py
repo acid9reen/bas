@@ -1,10 +1,8 @@
 import sys
 import web3
 import argparse
-from random import random
 from typing import Union
 from web3 import Web3
-from web3._utils.threads import Timeout
 from web3.middleware import geth_poa_middleware
 
 # Project modules
@@ -12,59 +10,13 @@ import utils
 
 URL = "http://127.0.0.1:8545"
 
-w3 = Web3(Web3.HTTPProvider(URL))
-
-# configure provider to work with PoA chains
-w3.middleware_onion.inject(geth_poa_middleware, layer=0)
-
 ACCOUNT_DB_NAME = 'account.json'
-MGMT_CONTRACT_DB_NAME = 'database.json'
-
-GAS_PRICE = utils.get_actual_gas_price(w3)
+MGMT_CONTRACT_DB_NAME = utils.MGMT_CONTRACT_DB_NAME
 
 CONTRACTS = {'token':  ('contracts/ERC20Token.sol', 'ERC20Token'),
              'wallet': ('contracts/ServiceProviderWallet.sol', 'ServiceProviderWallet'),
              'mgmt':   ('contracts/ManagementContract.sol', 'ManagementContract'),
              'battery': ('contracts/BatteryManagement.sol', 'BatteryManagement')}
-
-
-def _deploy_contract_and_wait(_actor: str, _contract_src_file: str, _contract_name: str, *args):
-    """
-    Deploy contract to the blockchain
-
-    :param str _actor:The person transacting the contract
-    :param str _contract_src_file: Path to contract source code
-    :param str _cantract_name: Contract name
-    :param list args: Contract's function arguments
-    :return: contract address
-    :rtype: str
-    """
-
-    tx_hash = _deploy_contract(_actor, _contract_src_file, _contract_name, *args)
-    receipt = web3.eth.wait_for_transaction_receipt(w3, tx_hash, 120, 0.1)
-
-    return receipt["contractAddress"]
-
-
-def _deploy_contract(_actor: str, _contract_src_file: str, _contract_name: str, *args):
-    """
-    Function definition ???
-
-    :param str _actor: The person transacting the contract
-    :param str _contract_src_file: Path to contract source code
-    :param str _cantract_name: Contract name
-    :param list args: Contract's function arguments
-    :return: ?
-    :rtype: ?
-
-    """
-
-    compiled = utils.compile_contracts(_contract_src_file)
-    contract = utils.initialize_contract_factory(w3, compiled, _contract_src_file + ":" + _contract_name)
-
-    tx = {'from': _actor, 'gasPrice': GAS_PRICE}
-
-    return contract.constructor(*args).transact(transaction=tx)
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -93,53 +45,18 @@ def create_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _wait_for_validation(_w3: Web3, _tx_dict: dict, _tmout: int = 120) -> dict:
-    receipts_list = {}
-    
-    for i in _tx_dict.keys():
-        receipts_list[i] = [_tx_dict[i], None]
-    
-    confirmations = len(list(_tx_dict))
-
-    with Timeout(_tmout) as tm:
-        while(confirmations > 0):
-            for i in _tx_dict.keys():
-                if receipts_list[i][1] is None:
-                    tx_reciept = _w3.eth.getTransactionReceipt(receipts_list[i][0])
-
-                    if tx_reciept is not None:
-                        receipts_list[i][1] = tx_reciept
-                        confirmations -= 1
-                
-                tm.sleep(random())
-    
-    return receipts_list
-
-
-def _create_mgmt_contract_db(_contract_address: str) -> None:
-    """
-    Create json file with Management contract address
-
-    :params str _contract_address: Managment contract address in blockchain
-    :return: Nothing
-    :rtype: None
-    """
-
-    data = {'mgmt_contract': _contract_address}
-    utils.write_data_base(data, MGMT_CONTRACT_DB_NAME)
-
-
-def setup(_service_fee: float) -> Union[dict, None]:
+def setup(_w3: Web3, _service_fee: float) -> Union[dict, None]:
     """
     Deploy and initialize Management, BatteryManagement,
     ServiceProviderWallet and CurrencyToken contracts to the blockchain
 
+    :param Web3 _w3: Web3 instance
     :params float _service_fee: Set fee for battery registration
     :return: Pairs of contract names and their addresses if setup successfull and None if not
     :rtype: dict/None
     """
 
-    service_fee = w3.toWei(_service_fee, 'ether')
+    service_fee = _w3.toWei(_service_fee, 'ether')
 
     data = utils.open_data_base(ACCOUNT_DB_NAME)
 
@@ -149,15 +66,15 @@ def setup(_service_fee: float) -> Union[dict, None]:
 
     actor = data['account']
 
-    utils.unlock_account(w3, actor, data['password'])
+    utils.unlock_account(_w3, actor, data['password'])
 
     tx_dict = {}
 
     for i in ['token', 'wallet']:
-        tx_dict[i] = _deploy_contract(actor, CONTRACTS[i][0], CONTRACTS[i][1])
+        tx_dict[i] = utils._deploy_contract(_w3, actor, CONTRACTS[i][0], CONTRACTS[i][1])
 
     # wait for deployment transactions validation
-    receipt_dict = _wait_for_validation(w3, tx_dict)
+    receipt_dict = utils._wait_for_validation(_w3, tx_dict)
 
     currency_token_contract_addr = receipt_dict['token'][1]['contractAddress']
     service_provider_wallet_addr = receipt_dict['wallet'][1]['contractAddress']
@@ -168,24 +85,24 @@ def setup(_service_fee: float) -> Union[dict, None]:
 
         if service_provider_wallet_addr is not None:
             # deploy managment contract
-            mgmt_contract_addr = _deploy_contract_and_wait(actor, CONTRACTS['mgmt'][0], CONTRACTS['mgmt'][1], 
+            mgmt_contract_addr = utils._deploy_contract_and_wait(_w3, actor, CONTRACTS['mgmt'][0], CONTRACTS['mgmt'][1], 
                                                            service_provider_wallet_addr, service_fee)
             
             if mgmt_contract_addr is not None:
-                _create_mgmt_contract_db(mgmt_contract_addr)
+                utils._create_mgmt_contract_db(mgmt_contract_addr)
 
                 # deploy battery managment
-                battery_mgmt_contract_addr = _deploy_contract_and_wait(actor, CONTRACTS['battery'][0], CONTRACTS['battery'][1],
+                battery_mgmt_contract_addr = utils._deploy_contract_and_wait(_w3, actor, CONTRACTS['battery'][0], CONTRACTS['battery'][1],
                                                                        mgmt_contract_addr, currency_token_contract_addr)
                 
                 if battery_mgmt_contract_addr is not None:
                     compiled_contract = utils.compile_contracts(CONTRACTS['mgmt'][0])
-                    mgmt_contract = utils.initialize_contract_factory(w3, compiled_contract,
+                    mgmt_contract = utils.initialize_contract_factory(_w3, compiled_contract,
                                                                       CONTRACTS['mgmt'][0] + ':' + CONTRACTS['mgmt'][1],
                                                                       mgmt_contract_addr)
 
                     tx_hash = mgmt_contract.functions.setBatteryManagementContract(battery_mgmt_contract_addr).transact({'from': actor, 'gasPrice': GAS_PRICE})
-                    receipt = web3.eth.wait_for_transaction_receipt(w3, tx_hash, 120, 0.1)
+                    receipt = web3.eth.wait_for_transaction_receipt(_w3, tx_hash, 120, 0.1)
 
                     if receipt.status == 1:
                         contract_addresses = {
@@ -207,13 +124,22 @@ def main() -> None:
     :return: Nothing
     :rtype: None
     """
+
+    w3 = Web3(Web3.HTTPProvider(URL))
+
+    # configure provider to work with PoA chains
+    w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+
+    global GAS_PRICE
+    GAS_PRICE = utils.get_actual_gas_price(w3)
+
     parser = create_parser()
     args = parser.parse_args()
 
     if args.new:
         print(utils.create_new_account(w3, args.new, ACCOUNT_DB_NAME))
     elif args.setup:
-        contract_addresses = setup(args.setup)
+        contract_addresses = setup(w3, args.setup)
 
         if contract_addresses is None:
             print('Contracts deployment and configuration failed')
