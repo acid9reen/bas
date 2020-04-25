@@ -5,6 +5,10 @@ import "./BatteryManagement.sol";
 import "./lib/Ownable.sol";
 
 contract ManagementContract is Ownable {
+
+    ServiceProviderWallet public serviceProviderWallet;
+    BatteryManagement public batteryManagement;
+    uint256 batFee;
     // Для оповещения регистрации нового производителя
     // - адрес аккаунта из-под которого проходила регистрация
     // - идентификатор производителя
@@ -19,10 +23,13 @@ contract ManagementContract is Ownable {
     // - адрес контракта, ответственного за накопление криптовалюты,
     //   перечисляемой в качестве депозита за использование сервиса.
     // - сумму сбора за выпуск одной батареи
-    //uint256 BatFee;
-    constructor(address _wallet, uint256 _batfee) public{
-        //BatFee = _batfee;
-        //walletContract = ServiceProviderWallet(_wallet);
+    constructor(address payable _serviceProviderWalletAddr, uint256 _batfee) public{
+        batFee = _batfee;
+        serviceProviderWallet = ServiceProviderWallet(_serviceProviderWalletAddr);
+    }
+
+    function setBatteryManagementContract(address _batteryMgmtContractAddr) public{
+        batteryManagement = BatteryManagement(_batteryMgmtContractAddr);
     }
 
 /*
