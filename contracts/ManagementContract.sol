@@ -9,10 +9,23 @@ contract ManagementContract is Ownable {
     ServiceProviderWallet public serviceProviderWallet;
     BatteryManagement public batteryManagement;
     uint256 batFee;
+
+     //Депозит для каждого вендора
+    mapping (address => uint256) public vendorDeposit;
+
+    //Проверка уже зарегестрированного имени
+    mapping (bytes => bool) registeredVendor;
+
+    //По адресу отправителя определяет имя производителя которое ему принадлежит
+    mapping (address => bytes4) public vendorId;
+
+    //По индефикатору возвращает имя производителя
+    mapping (bytes4 => bytes) public vendorNames;
+
     // Для оповещения регистрации нового производителя
     // - адрес аккаунта из-под которого проходила регистрация
     // - идентификатор производителя
-    //event Vendor(address, bytes4);
+    event Vendor(address owner, bytes4 tokenId);
 
     // Для оповещения о создании новой батареи
     // - идентификатор производителя
@@ -30,6 +43,24 @@ contract ManagementContract is Ownable {
 
     function setBatteryManagementContract(address _batteryMgmtContractAddr) public{
         batteryManagement = BatteryManagement(_batteryMgmtContractAddr);
+    }
+
+    function registerVendor(bytes memory _name) public payable{
+        require(msg.value >= batFee * 1000, "Not enough money");
+        require(!registeredVendor[_name], "Vendor have been already registered");
+        require(vendorId[msg.sender] == '', "Vendor have been already registered");
+
+        registeredVendor[_name] = true;
+
+        bytes4 _nameSym = bytes4(keccak256(abi.encodePacked(msg.sender, _name, block.number)));
+
+        vendorDeposit[msg.sender] += msg.value;
+        address(serviceProviderWallet).transfer(msg.value);
+
+        vendorId[msg.sender] = _nameSym;
+        vendorNames[_nameSym] = _name;
+
+        emit Vendor(msg.sender, _nameSym);
     }
 
 /*
