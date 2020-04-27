@@ -6,10 +6,10 @@ import "./NFT/BasicNFToken.sol";
 
 contract BatteryManagement is Ownable, BasicNFToken{
     ManagementContract public managementContract;
-    // Для оповещения о передаче прав владения батареей новому владельцу
-    // - адрес предыдущего владельца
-    // - адрес нового владельца
-    // - индентификатор батареи
+    // To notify the transfer of battery ownership to a new ownerдельцу
+    // - address of the previous owner
+    // - address of the new owner
+    // - battery identifier
     event Transfer(address indexed, address indexed, bytes20);
 
     // Для оповещения, что какому-то аккунту делегировано право менять владельца
@@ -23,21 +23,21 @@ contract BatteryManagement is Ownable, BasicNFToken{
     // - адрес контракта
     //event NewDeal(address);
 
-    // Конструктор контракта
-    // - адрес контракта, управляющего списком вендоров.
-    // - адрес контракта, управляющего токенами, в которых будет
-    //   происходить расчет за замену батарей.
+    // Contract constructor
+    // - The address of the contract managing the list of vendors.
+    // - address of the contract that manages the tokens in which it will be
+    //    Settlement for battery replacement.
     constructor(address _mgmt/*, address _erc20*/) public {
         managementContract = ManagementContract(_mgmt);
         //erc20 = ERC20Token(_erc20);
     }
 
-    // Создает новую батарею
-    // Владельцем батареи назначается его текущий создатель.
-    // Создание нового батареи может быть доступно только
-    // management контракту
-    // - адрес производителя батареи
-    // - идентификатор батареи
+    // Creates a new battery
+    // The owner of the battery is its current creator.
+    // Creating a new battery may only be available.
+    // management contract
+    // - battery manufacturer address
+    // - battery identifier
     function createBattery(address _vendor, bytes20 _tokenId) public {
         require(msg.sender == address(managementContract), "Not enough rights to call");
         require(!batteryExists(_tokenId), "Battery id is not unique");
@@ -45,7 +45,7 @@ contract BatteryManagement is Ownable, BasicNFToken{
         _transfer(address(0), _vendor, _tokenId);
     }
 
-    // Проверяет зарегистрирован ли токен с таким идентификатором любым из производителей.
+    // Checks if a token with this identifier is registered by any of the manufacturers.
     function batteryExists(bytes20 _batteryId) internal view returns (bool) {
         return tokenID[_batteryId] != address(0);
     }
