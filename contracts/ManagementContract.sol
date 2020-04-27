@@ -68,12 +68,12 @@ contract ManagementContract is Ownable {
     // батарей баланс уменьшается соответственно количеству батареи и
     // цене, установленной для данного производителя на текущий момент.
     // - идентификаторы батарей
-    function registerBatteries(bytes20[]  memory _ids) public payable{
+    function registerBatteries(bytes20[] memory _ids) public payable{
         uint _n = _ids.length;
         require(msg.value + vendorDeposit[msg.sender] >= _n * batFee, "Not enough money");
 
         bytes4 _tokenId = vendorId[msg.sender];
-        require(_tokenId != "", "Vendor have been already registered");
+        require(_tokenId != "", "Vendor haven't been registered");
 
         vendorDeposit[msg.sender] += msg.value - (_n * batFee);
         if (msg.value > 0){
