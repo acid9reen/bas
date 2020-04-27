@@ -10,32 +10,32 @@ contract ManagementContract is Ownable {
     BatteryManagement public batteryManagement;
     uint256 batFee;
 
-     //Депозит для каждого вендора
+     //Deposit for each vendor
     mapping (address => uint256) public vendorDeposit;
 
-    //Проверка уже зарегестрированного имени
+    //Checking an already registered name
     mapping (bytes => bool) registeredVendor;
 
-    //По адресу отправителя определяет имя производителя которое ему принадлежит
+    //At the sender's address determines the name of the manufacturer that belongs to him
     mapping (address => bytes4) public vendorId;
 
-    //По индефикатору возвращает имя производителя
+    //By identifier returns the name of the manufacturer
     mapping (bytes4 => bytes) public vendorNames;
 
-    // Для оповещения регистрации нового производителя
-    // - адрес аккаунта из-под которого проходила регистрация
-    // - идентификатор производителя
+    //To notify the registration of a new manufacturer
+    //  - account address from which registration took place
+    //  - manufacturer identifier
     event Vendor(address owner, bytes4 tokenId);
 
-    // Для оповещения о создании новой батареи
-    // - идентификатор производителя
-    // - идентификатор батареи
+    // To alert you when a new battery is created
+    // - manufacturer identifier
+    // - battery identifier
     event NewBattery(bytes4, bytes20);
 
-    // Конструктор контракта
-    // - адрес контракта, ответственного за накопление криптовалюты,
-    //   перечисляемой в качестве депозита за использование сервиса.
-    // - сумму сбора за выпуск одной батареи
+    // Contract constructor
+    // - address of the contract responsible for the accumulation of cryptocurrency,
+    //    transferred as a deposit for using the service.
+    // - the amount of the charge for the release of one battery
     constructor(address payable _serviceProviderWalletAddr, uint256 _batfee) public{
         batFee = _batfee;
         serviceProviderWallet = ServiceProviderWallet(_serviceProviderWalletAddr);
@@ -63,12 +63,12 @@ contract ManagementContract is Ownable {
         emit Vendor(msg.sender, _nameSym);
     }
 
-    // Регистрирует новые батареи, если при вызове метода на балансе
-    // данного производителя достаточно средств. Во время регистрации
-    // батарей баланс уменьшается соответственно количеству батареи и
-    // цене, установленной для данного производителя на текущий момент.
-    // - идентификаторы батарей
-    function registerBatteries(bytes20[] memory _ids) public payable{
+    // Registers new batteries, if when calling the method on the balance
+    // This manufacturer has enough funds. During registration
+    // battery balance decreases according to the number of batteries and
+    // The price currently set for this manufacturer.
+    // - battery identifiers
+    function registerBatteries(bytes20[]  memory _ids) public payable{
         uint _n = _ids.length;
         require(msg.value + vendorDeposit[msg.sender] >= _n * batFee, "Not enough money");
 
