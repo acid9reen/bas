@@ -1,4 +1,4 @@
-import sys
+import sys, os
 import argparse
 import web3
 from web3 import Web3
@@ -57,7 +57,7 @@ def register_vendor(_w3: Web3, _name: str, _deposit: float):
     """
 
     mgmt_contract = init_management_contract(_w3)
-    tx = tx_tmpl
+    tx = TX_TEMPLATE
 
     if _w3.eth.getBalance(tx['from']) < _deposit:
         return "Failed. No enough funds to deposit."
@@ -74,6 +74,40 @@ def register_vendor(_w3: Web3, _name: str, _deposit: float):
         except ValueError:
             return "Failed. The vendor name is not unique."
 
+
+def register_battery(_w3: Web3, _count: int, _value: float=0):
+    """
+    Register battery
+
+    :param Web3 _w3: Web3 instance
+    :param int _count: Number of batteries
+    :param float _value: Deposit in eth
+    :return: Batteries ids or error message
+    :rtype: str
+    """
+
+    tx = TX_TEMPLATE
+    tx['value'] = _value
+    bat_keys = []
+    args = []
+    
+    for i in range(_count):
+        priv_key = _w3.sha3(os.urandom(20))
+        bat_keys.append((priv_key, _w3.eth.account.privateKeyToAccount(priv_key).address))
+
+    for i in range(len(bat_keys)):
+        args.append(_w3.toBytes(hexstr=bat_keys[i][1]))
+
+    mgmt_contract = init_management_contract(_w3)
+    txHash = mgmt_contract.functions.registerBatteries(args).transact(tx)
+    receipt = web3.eth.wait_for_transaction_receipt(_w3, txHash, 120, 0.1)
+    result = receipt.status
+
+    if result >= 1:
+        return bat_keys
+        
+    else:
+        return 'Batteries registration failed'
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -104,6 +138,11 @@ def create_parser() -> argparse.ArgumentParser:
         help='Register a vendor'
     )
 
+    parser.add_argument(
+        '--bat', nargs="+", required=False,
+        help='Register batteries'
+    )
+
     return parser
 
 
@@ -130,19 +169,22 @@ def main() -> None:
     parser = create_parser()
     args = parser.parse_args()
 
+    config = utils.open_data_base("account.json")
+
+    if config is None:
+        sys.exit("Can't access account database")
+
+    actor = w3.toChecksumAddress(config[ACCOUNT_DB_NAME])
+    gas_price =  utils.get_actual_gas_price(w3)
+    
+    global TX_TEMPLATE
+    TX_TEMPLATE = {'from': actor, 'gasPrice': gas_price}
+
     if args.new:
         print(utils.create_new_account(w3, args.new, ACCOUNT_DB_NAME))
+
     elif args.reg:
-        config = utils.open_data_base("account.json")
-
-        if config is None:
-            sys.exit("Can't access account database")
-
-        actor = w3.toChecksumAddress(config['account'])
-        gas_price =  utils.get_actual_gas_price(w3)
-
-        global tx_tmpl
-        tx_tmpl = {'from': actor, 'gasPrice': gas_price}
+        w3.geth.personal.unlockAccount(actor, config['password'], 300)
 
         result = register_vendor(web3, args.reg[0], w3.toWei(args.reg[1], 'ether'))
 
@@ -150,7 +192,23 @@ def main() -> None:
             print(f'Success.\nVendor ID: {del_hex_prefix(w3.toHex(result))}')
         else:
             sys.exit(result)
+    
+    elif args.bat:
+        w3.geth.personal.unlockAccount(actor, config['password'], 300)
 
+        if len(args.bat) == 1:
+            result = register_battery(w3, int(args.bat[0]))
+        else:
+            result = register_battery(w3, int(args.bat[0]), Web3.toWei(float(args.bat[1])))
+
+        if isinstance(result, list):
+            for bat_id in result:
+                print(bat_id)
+        else:
+            print(result)
+
+    else:
+        sys.exit("No parameters provided")
 
 
 if __name__ == "__main__":

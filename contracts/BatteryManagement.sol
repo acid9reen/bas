@@ -1,6 +1,11 @@
 pragma solidity ^0.6.4;
 
-contract BatteryManagement {
+import "./ManagementContract.sol";
+import "./lib/Ownable.sol";
+import "./NFT/BasicNFToken.sol";
+
+contract BatteryManagement is Ownable, BasicNFToken{
+    ManagementContract public managementContract;
     // Для оповещения о передаче прав владения батареей новому владельцу
     // - адрес предыдущего владельца
     // - адрес нового владельца
@@ -22,20 +27,30 @@ contract BatteryManagement {
     // - адрес контракта, управляющего списком вендоров.
     // - адрес контракта, управляющего токенами, в которых будет
     //   происходить расчет за замену батарей.
-    constructor(address _mgmt, address _erc20) public {
-       // managementContract = ManagementContract(_mgmt);
+    constructor(address _mgmt/*, address _erc20*/) public {
+        managementContract = ManagementContract(_mgmt);
         //erc20 = ERC20Token(_erc20);
     }
 
-/*
     // Создает новую батарею
     // Владельцем батареи назначается его текущий создатель.
     // Создание нового батареи может быть доступно только
     // management контракту
     // - адрес производителя батареи
     // - идентификатор батареи
-    function createBattery(address, bytes20) public;
+    function createBattery(address _vendor, bytes20 _tokenId) public {
+        require(msg.sender == address(managementContract), "Not enough rights to call");
+        require(!batteryExists(_tokenId), "Battery id is not unique");
+        _setTokenWithID(_tokenId, _vendor);
+        _transfer(address(0), _vendor, _tokenId);
+    }
 
+    // Проверяет зарегистрирован ли токен с таким идентификатором любым из производителей.
+    function batteryExists(bytes20 _batteryId) internal view returns (bool) {
+        return tokenID[_batteryId] != address(0);
+    }
+
+/*
     // Меняет владельца батареи. Может быть вызвана только
     // текущим владельцем
     // - адрес нового владельца
