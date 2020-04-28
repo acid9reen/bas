@@ -12,8 +12,8 @@ URL = "http://127.0.0.1:8545"
 
 ACCOUNT_DB_NAME = 'account.json'
 MGMT_CONTRACT_DB_NAME = utils.MGMT_CONTRACT_DB_NAME
-MGMT_CONTRACT_SRC_PATH = r"./contracts/ManagementCOntract.sol"
-MGMT_CONTRACT_NAME = "ManagementCOntract"
+MGMT_CONTRACT_SRC_PATH = r"./contracts/ManagementContract.sol"
+MGMT_CONTRACT_NAME = "ManagementContract"
 
 
 CONFIG = utils.open_data_base(ACCOUNT_DB_NAME)
@@ -186,7 +186,7 @@ def main() -> None:
     elif args.reg:
         w3.geth.personal.unlockAccount(actor, config['password'], 300)
 
-        result = register_vendor(web3, args.reg[0], w3.toWei(float(args.reg[1]), 'ether'))
+        result = register_vendor(w3, args.reg[0], w3.toWei(float(args.reg[1]), 'ether'))
 
         if isinstance(result, bytes):
             print(f'Success.\nVendor ID: {del_hex_prefix(w3.toHex(result))}')
