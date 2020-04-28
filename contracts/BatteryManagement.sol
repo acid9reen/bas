@@ -27,7 +27,7 @@ contract BatteryManagement is Ownable, BasicNFToken{
     // - The address of the contract managing the list of vendors.
     // - address of the contract that manages the tokens in which it will be
     //    Settlement for battery replacement.
-    constructor(address _mgmt/*, address _erc20*/) public {
+    constructor(address _mgmt, address _erc20) public {
         managementContract = ManagementContract(_mgmt);
         //erc20 = ERC20Token(_erc20);
     }
