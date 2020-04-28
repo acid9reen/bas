@@ -174,7 +174,7 @@ def main() -> None:
     if config is None:
         sys.exit("Can't access account database")
 
-    actor = w3.toChecksumAddress(config[ACCOUNT_DB_NAME])
+    actor = w3.toChecksumAddress(config['account'])
     gas_price =  utils.get_actual_gas_price(w3)
     
     global TX_TEMPLATE
@@ -186,7 +186,7 @@ def main() -> None:
     elif args.reg:
         w3.geth.personal.unlockAccount(actor, config['password'], 300)
 
-        result = register_vendor(web3, args.reg[0], w3.toWei(args.reg[1], 'ether'))
+        result = register_vendor(web3, args.reg[0], w3.toWei(float(args.reg[1]), 'ether'))
 
         if isinstance(result, bytes):
             print(f'Success.\nVendor ID: {del_hex_prefix(w3.toHex(result))}')
