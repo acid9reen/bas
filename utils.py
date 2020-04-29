@@ -191,21 +191,23 @@ def compile_contracts(_files: Union[str, list]):
     return contracts
 
 
-def get_account_from_db(_file_name: str) -> Union[str, None]:
+def get_data_from_db(_file_name: str,_key: str) -> Union[str, None]:
     """
-    Get account address from database
+    Get data from database
 
     :params str _file_name: Name of the database file
-    :return: None if file does not exist or account address
+    :params str _key: Key of dictionary
+    :return: None if file does not exist or value of dictionary's key 
     :rtype: None/str
     """
 
     data = open_data_base(_file_name)
     
     if data is None:
+        print("Cannot access account database")
         return None
     
-    return data["account"]
+    return data[_key]
 
 
 def initialize_contract_factory(_w3: Web3, _compiled_contracts, _key: str, _address: str = None):
