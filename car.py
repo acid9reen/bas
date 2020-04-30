@@ -12,6 +12,7 @@ import utils
 URL = "http://127.0.0.1:8545"
 ACCOUNT_DB_NAME = 'car.json'
 MGMT_CONTRACT_DB_NAME = utils.MGMT_CONTRACT_DB_NAME
+MGMT_CONTRACT_SRC_PATH = utils.MGMT_CONTRACT_SRC_PATH
 CONFIG = utils.open_data_base(ACCOUNT_DB_NAME)
 DATABASE = utils.open_data_base(MGMT_CONTRACT_DB_NAME)
 
@@ -34,7 +35,7 @@ def generate_private_key(_w3: Web3) -> str:
     if privateKey[:2] == '0x':
         privateKey = privateKey[2:]
 
-    return(privateKey)
+    return (privateKey)
 
 
 def new_car_account(_w3: Web3) -> None:
@@ -60,6 +61,47 @@ def get_car_account_from_db(_w3: Web3) -> None:
     print(_w3.eth.account.privateKeyToAccount(utils.get_data_from_db(ACCOUNT_DB_NAME, 'key')).address)
 
 
+def register_car(_w3: Web3):
+    """
+    Register new car
+
+    :param Web3 _w3: Web3 instance
+    """
+
+    data = utils.open_data_base(MGMT_CONTRACT_DB_NAME)
+
+    if data is None:
+        return 'Cannot access management contract database'
+        
+    data = CONFIG
+
+    if data is None:
+        return 'Cannot access account database'
+
+    private_key = data['key']
+    mgmt_contract = utils.init_management_contract(_w3)
+    car_address = _w3.eth.account.privateKeyToAccount(private_key).address
+    registration_required_gas = 50000
+    gas_price = utils.get_actual_gas_price(_w3)
+
+    if registration_required_gas * gas_price > _w3.eth.getBalance(car_address):
+        return 'No enough funds to send transaction'
+
+    nonce = _w3.eth.getTransactionCount(car_address)
+    tx = {'gasPrice': gas_price, 'nonce': nonce}
+
+    regTx = mgmt_contract.functions.registerCar().buildTransaction(tx)
+    signTx = _w3.eth.account.signTransaction(regTx, private_key)
+    txHash = _w3.eth.sendRawTransaction(signTx.rawTransaction)
+    receipt = web3.eth.wait_for_transaction_receipt(_w3, txHash, 120, 0.1)
+
+    if receipt.status == 1:
+        return 'Registered succsessfully'        
+    else:
+        return 'Car registration failed'
+
+
+
 def create_parser() -> argparse.ArgumentParser:
     """
     Create cli argument parser
@@ -79,7 +121,7 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        '--new', action='store_true', required=False, #store_true: в основном используется для флагов. Вернет Вам значение, указанное в const
+        '--new', action='store_true', required=False,
         help='Generate a new account for the particular AGV'
     )
 
@@ -88,6 +130,11 @@ def create_parser() -> argparse.ArgumentParser:
         help='Get identificator (Ethereum address) of AGV from the private key stored in car.json'
     )
     
+    parser.add_argument(
+        '--reg', action='store_true', required=False,
+        help='Register the vehicle in the chain'
+    )
+
     return parser
 
 
@@ -104,6 +151,8 @@ def main():
         new_car_account(w3)
     elif args.account:
         get_car_account_from_db(w3)
+    elif args.reg:
+        print(register_car(w3))
 
 
 if __name__ == "__main__":

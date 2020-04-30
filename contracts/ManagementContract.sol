@@ -87,6 +87,8 @@ contract ManagementContract is Ownable {
 
     }
 
+    function registerCar() public payable{}
+
 /*
     // Устанавливает адрес для контракта, ответственного за
     // управление информацией о батареях.
