@@ -29,22 +29,6 @@ if DATABASE is None:
     sys.exit("Setup hasn't been done")
 
 
-def init_management_contract(_w3: Web3):
-    """
-    Creates management contract object
-
-    :param Web3 _w3: Web3 instance
-    :return: Management contract
-    :rtype: Contract instance
-    """
-
-    compiled = utils.compile_contracts(MGMT_CONTRACT_SRC_PATH)
-    mgmt_contract = utils.initialize_contract_factory(_w3, compiled, MGMT_CONTRACT_SRC_PATH + ":" + MGMT_CONTRACT_NAME,
-                                                      DATABASE["mgmt_contract"])
-    
-    return mgmt_contract
-
-
 def register_vendor(_w3: Web3, _name: str, _deposit: float):
     """
     Register new vendor
@@ -56,7 +40,7 @@ def register_vendor(_w3: Web3, _name: str, _deposit: float):
     :rtype: str
     """
 
-    mgmt_contract = init_management_contract(_w3)
+    mgmt_contract = utils.init_management_contract(_w3)
     tx = TX_TEMPLATE
 
     if _w3.eth.getBalance(tx['from']) < _deposit:
@@ -98,7 +82,7 @@ def register_battery(_w3: Web3, _count: int, _value: float=0):
     for i in range(len(bat_keys)):
         args.append(_w3.toBytes(hexstr=bat_keys[i][1]))
 
-    mgmt_contract = init_management_contract(_w3)
+    mgmt_contract = utils.init_management_contract(_w3)
     txHash = mgmt_contract.functions.registerBatteries(args).transact(tx)
     receipt = web3.eth.wait_for_transaction_receipt(_w3, txHash, 120, 0.1)
     result = receipt.status
@@ -176,7 +160,7 @@ def main() -> None:
 
     actor = w3.toChecksumAddress(config['account'])
     gas_price =  utils.get_actual_gas_price(w3)
-    
+  
     global TX_TEMPLATE
     TX_TEMPLATE = {'from': actor, 'gasPrice': gas_price}
 
@@ -186,7 +170,7 @@ def main() -> None:
     elif args.reg:
         w3.geth.personal.unlockAccount(actor, config['password'], 300)
 
-        result = register_vendor(w3, args.reg[0], w3.toWei(float(args.reg[1]), 'ether'))
+        result = register_vendor(w3, args.reg[0], w3.toWei(float(args.reg[1]), 'ether')) 
 
         if isinstance(result, bytes):
             print(f'Success.\nVendor ID: {del_hex_prefix(w3.toHex(result))}')

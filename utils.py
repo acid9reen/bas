@@ -9,6 +9,8 @@ from solcx import compile_files
 
 
 MGMT_CONTRACT_DB_NAME = 'database.json'
+MGMT_CONTRACT_SRC_PATH = r"./contracts/ManagementContract.sol"
+MGMT_CONTRACT_NAME = "ManagementContract"
 
 
 def _deploy_contract_and_wait(_w3: Web3, _actor: str, _contract_src_file: str, _contract_name: str, *args):
@@ -208,6 +210,22 @@ def get_data_from_db(_file_name: str,_key: str) -> Union[str, None]:
         return None
     
     return data[_key]
+
+
+def init_management_contract(_w3: Web3):
+    """
+    Creates management contract object
+
+    :param Web3 _w3: Web3 instance
+    :return: Management contract
+    :rtype: Contract instance
+    """
+
+    compiled = compile_contracts(MGMT_CONTRACT_SRC_PATH)
+    mgmt_contract = initialize_contract_factory(_w3, compiled, MGMT_CONTRACT_SRC_PATH + ":" + MGMT_CONTRACT_NAME,
+                                                      open_data_base(MGMT_CONTRACT_DB_NAME)["mgmt_contract"])
+    
+    return mgmt_contract
 
 
 def initialize_contract_factory(_w3: Web3, _compiled_contracts, _key: str, _address: str = None):
