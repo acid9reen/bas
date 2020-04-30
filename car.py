@@ -1,8 +1,8 @@
 import sys, os
-import argparse
-import web3
 import datetime as dt
 from random import randint
+import argparse
+import web3
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
@@ -18,36 +18,47 @@ DATABASE = utils.open_data_base(MGMT_CONTRACT_DB_NAME)
 if DATABASE is None:
     sys.exit("Setup hasn't been done")
 
-web3 = Web3()
 
-def generate_private_key():
+def generate_private_key(_w3: Web3) -> str:
     """
     Generate private key for car account using current time and random int
     
+    :param Web3 _w3: Web3 instance
     :return: Private Key
-    :rtype: Hex
+    :rtype: str
     """
+
     t = int(dt.datetime.utcnow().timestamp())
     k = randint(0, 2 ** 16)
-    privateKey = web3.toHex(web3.sha3(((t + k).to_bytes(32, 'big'))))
+    privateKey = _w3.toHex(_w3.sha3(((t + k).to_bytes(32, 'big'))))
     if privateKey[:2] == '0x':
         privateKey = privateKey[2:]
+
     return(privateKey)
 
-def new_car_account():
+
+def new_car_account(_w3: Web3) -> None:
     """
     Create new addres for car account
+    
+    :param Web3 _w3: Web3 instance
     """
-    privateKey = generate_private_key()
+
+    privateKey = generate_private_key(_w3)
     data = {"key": privateKey}
     utils.write_data_base(data, ACCOUNT_DB_NAME)
-    print(web3.eth.account.privateKeyToAccount(data['key']).address)
+    print(_w3.eth.account.privateKeyToAccount(data['key']).address)
 
-def get_car_account_from_db():
+
+def get_car_account_from_db(_w3: Web3) -> None:
     """
     Get car account from database
+
+    :param Web3 _w3: Web3 instance
     """
-    print(web3.eth.account.privateKeyToAccount(utils.get_data_from_db(ACCOUNT_DB_NAME, 'key')).address)
+
+    print(_w3.eth.account.privateKeyToAccount(utils.get_data_from_db(ACCOUNT_DB_NAME, 'key')).address)
+
 
 def create_parser() -> argparse.ArgumentParser:
     """
@@ -79,15 +90,20 @@ def create_parser() -> argparse.ArgumentParser:
     
     return parser
 
+
 def main():
+    w3 = Web3(Web3.HTTPProvider(URL))
+
+    # configure provider to work with PoA chains
+    w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+
     parser = create_parser()
     args = parser.parse_args()
 
     if args.new:
-        new_car_account()
+        new_car_account(w3)
     elif args.account:
-        get_car_account_from_db()
-
+        get_car_account_from_db(w3)
 
 
 if __name__ == "__main__":
