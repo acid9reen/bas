@@ -9,6 +9,9 @@ from solcx import compile_files
 
 
 MGMT_CONTRACT_DB_NAME = 'database.json'
+MGMT_CONTRACT_SRC_PATH = r"./contracts/ManagementContract.sol"
+MGMT_CONTRACT_NAME = "ManagementContract"
+REGISTRATION_REQUIRED_GAS = 50000
 
 
 def _deploy_contract_and_wait(_w3: Web3, _actor: str, _contract_src_file: str, _contract_name: str, *args):
@@ -132,7 +135,7 @@ def unlock_account(_w3: Web3, _account: str, _password: str) -> None:
     :return: Nothing
     :rtype: None
     """
-    _w3.geth.personal.unlockAccount(_account, _password, 60)
+    _w3.geth.personal.unlockAccount(_account, _password, 300)
 
 
 def create_new_account(_w3: Web3, _password: str, _file_name: str) -> str:
@@ -191,21 +194,39 @@ def compile_contracts(_files: Union[str, list]):
     return contracts
 
 
-def get_account_from_db(_file_name: str) -> Union[str, None]:
+def get_data_from_db(_file_name: str,_key: str) -> Union[str, None]:
     """
-    Get account address from database
+    Get data from database
 
     :params str _file_name: Name of the database file
-    :return: None if file does not exist or account address
+    :params str _key: Key of dictionary
+    :return: None if file does not exist or value of dictionary's key 
     :rtype: None/str
     """
 
     data = open_data_base(_file_name)
     
     if data is None:
+        print("Cannot access account database")
         return None
     
-    return data["account"]
+    return data[_key]
+
+
+def init_management_contract(_w3: Web3):
+    """
+    Creates management contract object
+
+    :param Web3 _w3: Web3 instance
+    :return: Management contract
+    :rtype: Contract instance
+    """
+
+    compiled = compile_contracts(MGMT_CONTRACT_SRC_PATH)
+    mgmt_contract = initialize_contract_factory(_w3, compiled, MGMT_CONTRACT_SRC_PATH + ":" + MGMT_CONTRACT_NAME,
+                                                      open_data_base(MGMT_CONTRACT_DB_NAME)["mgmt_contract"])
+    
+    return mgmt_contract
 
 
 def initialize_contract_factory(_w3: Web3, _compiled_contracts, _key: str, _address: str = None):
