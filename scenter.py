@@ -75,7 +75,7 @@ def register_scenter(_w3: Web3):
     except ValueError:
         sys.exit("Already registered")
 
-    receipt = web3.eth.wait_for_transaction_receipt(_w33, tx_hash, 120, 0.1)
+    receipt = web3.eth.wait_for_transaction_receipt(_w3, tx_hash, 120, 0.1)
 
     if receipt.status == 1:
         return "Registered successfully"
