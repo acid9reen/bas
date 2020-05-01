@@ -32,6 +32,14 @@ contract ManagementContract is Ownable {
     // - battery identifier
     event NewBattery(bytes4, bytes20);
 
+    // Returns true or false depending on whether it is registered
+    // electric car with the specified address in the system or not.
+    mapping (address => bool) public cars;
+
+    // Returns true or false depending on whether it is registered
+    // electric car with the specified address in the system or not.
+    mapping (address => bool) public serviceCenters;
+
     // Contract constructor
     // - address of the contract responsible for the accumulation of cryptocurrency,
     //    transferred as a deposit for using the service.
@@ -87,7 +95,11 @@ contract ManagementContract is Ownable {
 
     }
 
-    function registerCar() public payable{}
+    function registerCar() public payable{
+        require(!cars[msg.sender], "Car have been already registered");
+        require(!serviceCenters[msg.sender], "Car have been already registered");
+        cars[msg.sender] = true;
+    }
 
 /*
     // Устанавливает адрес для контракта, ответственного за
