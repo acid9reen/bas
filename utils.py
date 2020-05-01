@@ -11,6 +11,7 @@ from solcx import compile_files
 MGMT_CONTRACT_DB_NAME = 'database.json'
 MGMT_CONTRACT_SRC_PATH = r"./contracts/ManagementContract.sol"
 MGMT_CONTRACT_NAME = "ManagementContract"
+REGISTRATION_REQUIRED_GAS = 50000
 
 
 def _deploy_contract_and_wait(_w3: Web3, _actor: str, _contract_src_file: str, _contract_name: str, *args):
@@ -134,7 +135,7 @@ def unlock_account(_w3: Web3, _account: str, _password: str) -> None:
     :return: Nothing
     :rtype: None
     """
-    _w3.geth.personal.unlockAccount(_account, _password, 60)
+    _w3.geth.personal.unlockAccount(_account, _password, 300)
 
 
 def create_new_account(_w3: Web3, _password: str, _file_name: str) -> str:
