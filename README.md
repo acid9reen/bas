@@ -37,14 +37,14 @@ git clone git@gitlab.com:acid9reen/bas.git
 ```bash
 python setup.py --new <password>
 ```
-Где <password> это пароль для создаваемого аккаунта
+Где *password* это пароль для создаваемого аккаунта
 
 #### Настройка смарт контрактов и их регистрация в сети блокчейн
 
 ```bash
 python setup.py --setup <service fee>
 ```
-Где <service fee> это цена за регистрацию одной батареи в eth
+Где *service fee* это цена за регистрацию одной батареи в eth
 
 ### Для сущности производителя аккумуляторных батарей
 
@@ -53,16 +53,16 @@ python setup.py --setup <service fee>
 ```bash
 python vendor.py --reg <vendor name> <service fee>
 ```
-Где <vendor name> это наименование производителя батарей  
-<service fee> - размер депозита в eth для регистрации производителя
+Где *vendor name* это наименование производителя батарей  
+*service fee* - размер депозита в eth для регистрации производителя
 
 #### Регистрация батарей в сети блокчейн
 
 ```bash
 python vendor.py --bat <quantity> [<deposit>]
 ```
-Где <quantity> это количество батарей для регистрации  
-<deposit> - сумма в eth для пополнения депозита производителя
+Где *quantity* это количество батарей для регистрации  
+*deposit* - сумма в eth для пополнения депозита производителя
 
 ### Для сущности сервисного центра
 
@@ -71,7 +71,7 @@ python vendor.py --bat <quantity> [<deposit>]
 ```bash
 python scenter.py --new <password>
 ```
-Где <password> это пароль для создаваемого аккаунта
+Где *password* это пароль для создаваемого аккаунта
 
 #### Регистрация аккаунта
 
