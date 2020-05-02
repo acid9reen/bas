@@ -115,8 +115,13 @@ contract ManagementContract is Ownable {
     }
 
     // Sets new batFee
-    function setFee(uint256 _batFee) private onlyOwner {
+    function setFee(uint256 _batFee) public onlyOwner {
         batFee = _batFee;
+    }
+
+    //Gets batFee
+    function getFee() public view returns(uint256){
+        return batFee;
     }
 
 }

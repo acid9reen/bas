@@ -127,7 +127,28 @@ def create_parser() -> argparse.ArgumentParser:
         help='Register batteries'
     )
 
+    parser.add_argument(
+        '--regfee', action='store_true', required=False,
+        help='Show registration fee per battery'
+    )
+
     return parser
+
+
+def get_fee(_w3: Web3) -> float:
+    """
+    Get registration fee from managmentContract
+
+    :param Web3_w3: Web3 instance
+    :return: Service fee
+    :rtype: float
+    """
+
+    mgmt_contract = utils.init_management_contract(_w3)
+
+    fee = mgmt_contract.functions.getFee().call()
+
+    return _w3.fromWei(fee, 'ether')
 
 
 def del_hex_prefix(_str: str) -> str:
@@ -190,6 +211,9 @@ def main() -> None:
                 print(bat_id)
         else:
             print(result)
+    
+    elif args.regfee:
+        print(f'Service fee: {get_fee(w3)} eth')
 
     else:
         sys.exit("No parameters provided")
