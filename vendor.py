@@ -129,6 +129,11 @@ def create_parser() -> argparse.ArgumentParser:
 
     parser.add_argument(
         '--regfee', action='store_true', required=False,
+        help='Show registration fee for vendor'
+    )
+
+    parser.add_argument(
+        '--batfee', action='store_true', required=False,
         help='Show registration fee per battery'
     )
 
@@ -213,7 +218,10 @@ def main() -> None:
             print(result)
     
     elif args.regfee:
-        print(f'Service fee: {get_fee(w3)} eth')
+        print(f'Vendor registration fee: {get_fee(w3) * 1000} eth')
+    
+    elif args.batfee:
+        print(f'Battery registration fee: {get_fee(w3)} eth')
 
     else:
         sys.exit("No parameters provided")
