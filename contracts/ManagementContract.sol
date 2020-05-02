@@ -124,5 +124,10 @@ contract ManagementContract is Ownable {
         return batFee;
     }
 
+    //Gets vendor's deposit
+    function getDeposit() public view returns(uint256){
+        return vendorDeposit[msg.sender];
+    }
+
 }
 

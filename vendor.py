@@ -140,6 +140,11 @@ def create_parser() -> argparse.ArgumentParser:
         help='Show registration fee per battery'
     )
 
+    parser.add_argument(
+        '--deposit', action='store_true', required=False,
+        help="Show vendor's deposit"
+    )
+
     return parser
 
 
@@ -157,6 +162,29 @@ def get_fee(_w3: Web3) -> float:
     fee = mgmt_contract.functions.getFee().call()
 
     return _w3.fromWei(fee, 'ether')
+
+
+def get_deposit(_w3: Web3):
+    """
+    Get account deposit
+
+    :param Web3 _w3: Web3 instance
+    :return: Vendor's deposit in ether
+    :rtype: float
+    """
+
+    data = utils.open_data_base(ACCOUNT_DB_NAME)
+    actor = data['account']
+
+    mgmt_contract = utils.init_management_contract(_w3)
+
+    try:
+        deposit = mgmt_contract.functions.getDeposit().call({'from': actor})
+
+        return _w3.fromWei(deposit, 'ether')
+
+    except:
+        sys.exit("The vendor doesn't exist")    
 
 
 def del_hex_prefix(_str: str) -> str:
@@ -225,6 +253,9 @@ def main() -> None:
     
     elif args.batfee:
         print(f'Battery registration fee: {get_fee(w3)} eth')
+
+    elif args.deposit:
+        print(f"Vendor deposit: {get_deposit(w3)} eth")
 
     else:
         sys.exit("No parameters provided")
