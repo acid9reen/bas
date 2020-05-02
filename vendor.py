@@ -46,6 +46,9 @@ def register_vendor(_w3: Web3, _name: str, _deposit: float):
     if _w3.eth.getBalance(tx['from']) < _deposit:
         return "Failed. No enough funds to deposit."
     
+    if _w3.eth.getBalance(tx['from']) + _deposit < get_fee(_w3) * 1000:
+        return "Failed. Not enough funds to register"
+    
     else:
         try:
             tx['value'] = _deposit
