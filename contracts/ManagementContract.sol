@@ -114,5 +114,20 @@ contract ManagementContract is Ownable {
         cars[msg.sender] = true;
     }
 
+    // Sets new batFee
+    function setFee(uint256 _batFee) public onlyOwner {
+        batFee = _batFee;
+    }
+
+    //Gets batFee
+    function getFee() public view returns(uint256){
+        return batFee;
+    }
+
+    //Gets vendor's deposit
+    function getDeposit() public view returns(uint256){
+        return vendorDeposit[msg.sender];
+    }
+
 }
 

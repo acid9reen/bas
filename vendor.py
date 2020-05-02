@@ -46,6 +46,9 @@ def register_vendor(_w3: Web3, _name: str, _deposit: float):
     if _w3.eth.getBalance(tx['from']) < _deposit:
         return "Failed. No enough funds to deposit."
     
+    if _w3.eth.getBalance(tx['from']) + _deposit < get_fee(_w3) * 1000:
+        return "Failed. Not enough funds to register"
+    
     else:
         try:
             tx['value'] = _deposit
@@ -127,7 +130,61 @@ def create_parser() -> argparse.ArgumentParser:
         help='Register batteries'
     )
 
+    parser.add_argument(
+        '--regfee', action='store_true', required=False,
+        help='Show registration fee for vendor'
+    )
+
+    parser.add_argument(
+        '--batfee', action='store_true', required=False,
+        help='Show registration fee per battery'
+    )
+
+    parser.add_argument(
+        '--deposit', action='store_true', required=False,
+        help="Show vendor's deposit"
+    )
+
     return parser
+
+
+def get_fee(_w3: Web3) -> float:
+    """
+    Get registration fee from managmentContract
+
+    :param Web3_w3: Web3 instance
+    :return: Service fee
+    :rtype: float
+    """
+
+    mgmt_contract = utils.init_management_contract(_w3)
+
+    fee = mgmt_contract.functions.getFee().call()
+
+    return _w3.fromWei(fee, 'ether')
+
+
+def get_deposit(_w3: Web3):
+    """
+    Get account deposit
+
+    :param Web3 _w3: Web3 instance
+    :return: Vendor's deposit in ether
+    :rtype: float
+    """
+
+    data = utils.open_data_base(ACCOUNT_DB_NAME)
+    actor = data['account']
+
+    mgmt_contract = utils.init_management_contract(_w3)
+
+    try:
+        deposit = mgmt_contract.functions.getDeposit().call({'from': actor})
+
+        return _w3.fromWei(deposit, 'ether')
+
+    except:
+        sys.exit("The vendor doesn't exist")    
 
 
 def del_hex_prefix(_str: str) -> str:
@@ -190,6 +247,15 @@ def main() -> None:
                 print(bat_id)
         else:
             print(result)
+    
+    elif args.regfee:
+        print(f'Vendor registration fee: {get_fee(w3) * 1000} eth')
+    
+    elif args.batfee:
+        print(f'Battery registration fee: {get_fee(w3)} eth')
+
+    elif args.deposit:
+        print(f"Vendor deposit: {get_deposit(w3)} eth")
 
     else:
         sys.exit("No parameters provided")
