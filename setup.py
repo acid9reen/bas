@@ -42,7 +42,39 @@ def create_parser() -> argparse.ArgumentParser:
               'vendor registration fee'
     )
 
+    parser.add_argument('--setfee', type=float, required=False,
+                        help='Set new fee for battary registration')
+
     return parser
+
+
+def set_fee(_w3: Web3, _fee: float):
+    """
+    Set new fee for battery registraton
+
+    :param Web3 _w3: Web3 instance
+    :param float _fee: New fee to set
+    :return: Status message
+    :rtype: str
+    """
+
+    data = utils.open_data_base(ACCOUNT_DB_NAME)
+    actor = data['account']
+
+    tx = {'from': actor, 'gasPrice': utils.get_actual_gas_price}
+
+    mgmt_contract = utils.init_management_contract(_w3)
+
+    utils.unlock_account(_w3, actor, data['password'])
+
+    tx_hash = mgmt_contract.functions.setFee(_w3.toWei(_fee, 'ether')).transact(tx)
+    receipt = web3.eth.wait_for_transaction_receipt(_w3, tx_hash, 120, 0.1)
+    result = receipt.status
+
+    if result == 1:
+        return "Fee setting was successfull"
+    else:
+        return "Fee setting failed"
 
 
 def setup(_w3: Web3, _service_fee: float) -> Union[dict, None]:
@@ -143,7 +175,9 @@ def main() -> None:
         else:
             for key, value in contract_addresses.items():
                 print(f"{key}: {value}")
-
+    
+    elif args.setfee:
+        print(set_fee(w3, args.setfee))
     else:
         sys.exit("No parameters provided")
 

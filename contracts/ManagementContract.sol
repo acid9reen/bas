@@ -114,5 +114,10 @@ contract ManagementContract is Ownable {
         cars[msg.sender] = true;
     }
 
+    // Sets new batFee
+    function setFee(uint256 _batFee) private onlyOwner {
+        batFee = _batFee;
+    }
+
 }
 
