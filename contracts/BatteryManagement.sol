@@ -6,15 +6,15 @@ import "./NFT/BasicNFToken.sol";
 
 contract BatteryManagement is Ownable, BasicNFToken{
     ManagementContract public managementContract;
-    
+
     //Checking if car has battery
     mapping (address => bool) carHasBattery;
-    
+
     // To notify the transfer of battery ownership to a new ownerдельцу
-    // - address of the previous owner
-    // - address of the new owner
-    // - battery identifier
-    event Transfer(address indexed, address indexed, bytes20);
+    // from - address of the previous owner
+    // to - address of the new owner
+    // batteryId - battery identifier
+    event Transfer(address from, address to, bytes20 batteryId);
 
     // Для оповещения, что какому-то аккунту делегировано право менять владельца
     // батареи
@@ -45,6 +45,7 @@ contract BatteryManagement is Ownable, BasicNFToken{
     function createBattery(address _vendor, bytes20 _tokenId) public {
         require(msg.sender == address(managementContract), "Not enough rights to call");
         require(!batteryExists(_tokenId), "Battery id is not unique");
+
         _setTokenWithID(_tokenId, _vendor);
         _transfer(address(0), _vendor, _tokenId);
     }
@@ -59,14 +60,17 @@ contract BatteryManagement is Ownable, BasicNFToken{
     //_to - address of the new owner
     //_tokenId - battery identifier
     function transfer(address _to, bytes20 _tokenId) public{
-        require(msg.sender == tokenIdToOwner[_tokenId]);
+        require(msg.sender == tokenIdToOwner[_tokenId], "You do not have enough permissions");
+        require(carHasBattery[_to] != true, "Car already has a battery");
+
         _transfer(msg.sender, _to, _tokenId);
         carHasBattery[_to] = true;
+
         emit Transfer(msg.sender, _to, _tokenId);
     }
 
 /*
-    
+
 
     // Меняет владельца для всех батарей перечисленных в списке. Может быть вызвана
     // только текущим владельцем
