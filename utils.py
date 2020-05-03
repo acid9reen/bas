@@ -11,6 +11,8 @@ from solcx import compile_files
 MGMT_CONTRACT_DB_NAME = 'database.json'
 MGMT_CONTRACT_SRC_PATH = r"./contracts/ManagementContract.sol"
 MGMT_CONTRACT_NAME = "ManagementContract"
+BATTERY_MGMT_CONTRACT_SRC_PATH = r"./contracts/BatteryManagement.sol"
+BATTERY_MGMT_CONTRACT_NAME = "BatteryManagement"
 REGISTRATION_REQUIRED_GAS = 50000
 
 
@@ -236,7 +238,7 @@ def initialize_contract_factory(_w3: Web3, _compiled_contracts, _key: str, _addr
     :params Web3 _w3: Web3 instance
     :params _compiled_contracts: Compiled contracts
     :params str _key: Contract path + name
-    :params str _address: Target adsress
+    :params str _address: Target address
     :return: Contract instance
     :rtype: Contract
     """
@@ -253,3 +255,33 @@ def initialize_contract_factory(_w3: Web3, _compiled_contracts, _key: str, _addr
         )
 
     return contract
+
+
+def get_battery_managment_contract_addr(_w3: Web3) -> str:
+    """
+    :params Web3 _w3: Web3 instance
+    :return: Contract's address
+    :rtype: str
+    """
+
+    mgmt_contract = init_management_contract(_w3)
+    addr = mgmt_contract.functions.getBatteryManagmentAddr().call()
+
+    return addr
+
+
+def init_battery_management_contract(_w3: Web3, addr: str):
+    """
+    Creates management contract object
+
+    :param Web3 _w3: Web3 instance
+    :param str addr: Battery management contract's address
+    :return: Battery management contract
+    :rtype: Contract instance
+    """
+
+    compiled = compile_contracts(BATTERY_MGMT_CONTRACT_SRC_PATH)
+    battery_mgmt_contract = initialize_contract_factory(_w3, compiled, BATTERY_MGMT_CONTRACT_SRC_PATH + ":" + BATTERY_MGMT_CONTRACT_NAME,
+                                                        addr)
+    
+    return battery_mgmt_contract

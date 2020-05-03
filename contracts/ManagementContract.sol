@@ -38,7 +38,7 @@ contract ManagementContract is Ownable {
     // To alert you when a new battery is created
     // - manufacturer identifier
     // - battery identifier
-    event NewBattery(bytes4, bytes20);
+    event NewBattery(bytes4 tokenId, bytes20 batteryId);
 
     // Contract constructor
     // - address of the contract responsible for the accumulation of cryptocurrency,
@@ -127,6 +127,11 @@ contract ManagementContract is Ownable {
     //Gets vendor's deposit
     function getDeposit() public view returns(uint256){
         return vendorDeposit[msg.sender];
+    }
+
+    //Gets battaryManagment contract address
+    function getBatteryManagmentAddr() external view returns(address){
+        return address(batteryManagement);
     }
 
 }

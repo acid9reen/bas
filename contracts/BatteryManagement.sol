@@ -6,6 +6,10 @@ import "./NFT/BasicNFToken.sol";
 
 contract BatteryManagement is Ownable, BasicNFToken{
     ManagementContract public managementContract;
+    
+    //Checking if car has battery
+    mapping (address => bool) carHasBattery;
+    
     // To notify the transfer of battery ownership to a new ownerдельцу
     // - address of the previous owner
     // - address of the new owner
@@ -50,12 +54,19 @@ contract BatteryManagement is Ownable, BasicNFToken{
         return tokenID[_batteryId] != address(0);
     }
 
+    // Changes the owner of the battery. Can only be called by
+    // current owner
+    //_to - address of the new owner
+    //_tokenId - battery identifier
+    function transfer(address _to, bytes20 _tokenId) public{
+        require(msg.sender == tokenIdToOwner[_tokenId]);
+        _transfer(msg.sender, _to, _tokenId);
+        carHasBattery[_to] = true;
+        emit Transfer(msg.sender, _to, _tokenId);
+    }
+
 /*
-    // Меняет владельца батареи. Может быть вызвана только
-    // текущим владельцем
-    // - адрес нового владельца
-    // - идентификатор батареи
-    function transfer(address, bytes20) public;
+    
 
     // Меняет владельца для всех батарей перечисленных в списке. Может быть вызвана
     // только текущим владельцем
