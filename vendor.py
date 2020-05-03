@@ -92,11 +92,10 @@ def register_battery(_w3: Web3, _count: int, _value: float=0):
     result = receipt.status
 
     if result >= 1:
-        # print(mgmt_contract.events.NewBattery().processReceipt(receipt))
-        return bat_keys
+        return [x[1] for x in bat_keys]
         
     else:
-        return 'Batteries registration failed'
+        sys.exit('Batteries registration failed')
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -284,10 +283,8 @@ def main() -> None:
 
         if isinstance(result, list):
             for bat_id in result:
-                print(bat_id)
-        else:
-            print(result)
-    
+                print(f'Created battery with id: {bat_id[2:]}')
+
     elif args.regfee:
         print(f'Vendor registration fee: {get_fee(w3) * 1000} eth')
     
