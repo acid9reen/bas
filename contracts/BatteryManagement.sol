@@ -1,11 +1,13 @@
 pragma solidity ^0.6.4;
 
 import "./ManagementContract.sol";
+import "./ERC20Token.sol";
 import "./lib/Ownable.sol";
 import "./NFT/BasicNFToken.sol";
 
 contract BatteryManagement is Ownable, BasicNFToken{
     ManagementContract public managementContract;
+    ERC20Token public erc20Token;
 
     //Checking if car has battery
     mapping (address => bool) carHasBattery;
@@ -31,9 +33,9 @@ contract BatteryManagement is Ownable, BasicNFToken{
     // - The address of the contract managing the list of vendors.
     // - address of the contract that manages the tokens in which it will be
     //    Settlement for battery replacement.
-    constructor(address _mgmt, address _erc20) public {
+    constructor(address _mgmt, address _erc20Token) public {
         managementContract = ManagementContract(_mgmt);
-        //erc20 = ERC20Token(_erc20);
+        erc20Token = ERC20Token(_erc20Token);
     }
 
     // Creates a new battery

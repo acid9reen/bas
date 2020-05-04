@@ -139,9 +139,7 @@ contract ManagementContract is Ownable {
 
     //Gets battaryManagment contract address
     function getBatteryManagmentAddr() external view returns(address){
-        require(cars[msg.sender] == true || serviceCenters[msg.sender] == true, "It is not address of a car or service center");
         return address(batteryManagement);
     }
 
 }
-
