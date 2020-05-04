@@ -219,13 +219,13 @@ def change_owner(_w3: Web3, _battery_id: str, _new_owner: str) -> str:
 
     """
 
-    battery_mgmt_contract_addr = utils.get_battery_managment_contract_addr(_w3)
-    battery_mgmt_contract = utils.init_battery_management_contract(_w3, battery_mgmt_contract_addr)
-
     data = utils.open_data_base(ACCOUNT_DB_NAME)
     actor = data['account']
 
     tx = {'from': actor, 'gasPrice': utils.get_actual_gas_price(_w3)}
+
+    battery_mgmt_contract_addr = utils.get_battery_managment_contract_addr(_w3, _new_owner)
+    battery_mgmt_contract = utils.init_battery_management_contract(_w3, battery_mgmt_contract_addr)
 
     utils.unlock_account(_w3, actor, data['password'])
 
@@ -237,7 +237,6 @@ def change_owner(_w3: Web3, _battery_id: str, _new_owner: str) -> str:
         return "Ownership change was successfull"
     else:
         return "Ownership change failed"
-    
 
 
 def main() -> None:

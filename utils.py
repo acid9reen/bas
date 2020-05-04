@@ -1,4 +1,4 @@
-import os
+import sys, os
 import json
 from typing import Union
 from random import random
@@ -257,22 +257,25 @@ def initialize_contract_factory(_w3: Web3, _compiled_contracts, _key: str, _addr
     return contract
 
 
-def get_battery_managment_contract_addr(_w3: Web3) -> str:
+def get_battery_managment_contract_addr(_w3: Web3, sender: str) -> str:
     """
     :params Web3 _w3: Web3 instance
+    :param str sender: Sender's address
     :return: Contract's address
     :rtype: str
     """
-
-    mgmt_contract = init_management_contract(_w3)
-    addr = mgmt_contract.functions.getBatteryManagmentAddr().call()
+    try:
+        mgmt_contract = init_management_contract(_w3)
+        addr = mgmt_contract.functions.getBatteryManagmentAddr().call({'from': sender})
+    except:
+        sys.exit("It is not address of a car or service center")
 
     return addr
 
 
 def init_battery_management_contract(_w3: Web3, addr: str):
     """
-    Creates management contract object
+    Creates battery management contract object
 
     :param Web3 _w3: Web3 instance
     :param str addr: Battery management contract's address
