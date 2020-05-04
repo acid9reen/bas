@@ -92,6 +92,11 @@ def register_battery(_w3: Web3, _count: int, _value: float=0):
     result = receipt.status
 
     if result >= 1:
+        for battery in bat_keys:
+            utils.create_script_from_tmpl(hex(int.from_bytes(battery[0], byteorder='big')),
+                                          battery[1])
+
+
         return [x[1] for x in bat_keys]
         
     else:

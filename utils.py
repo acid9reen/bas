@@ -288,3 +288,13 @@ def init_battery_management_contract(_w3: Web3, addr: str):
                                                         addr)
     
     return battery_mgmt_contract
+
+
+def create_script_from_tmpl(private_key, address: str):
+    with open("batteryTemplate.py", 'r') as tmpl:
+        lines = tmpl.readlines()
+    
+    lines[11] = f"private_key = '{private_key}'\n"
+
+    with open(f"firmware/{address[2:10]}.py", 'w') as fw:
+        fw.writelines(lines)
