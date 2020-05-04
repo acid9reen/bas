@@ -257,18 +257,18 @@ def initialize_contract_factory(_w3: Web3, _compiled_contracts, _key: str, _addr
     return contract
 
 
-def get_battery_managment_contract_addr(_w3: Web3, sender: str) -> str:
+def get_battery_managment_contract_addr(_w3: Web3) -> str:
     """
     :params Web3 _w3: Web3 instance
-    :param str sender: Sender's address
     :return: Contract's address
     :rtype: str
     """
+
     try:
         mgmt_contract = init_management_contract(_w3)
-        addr = mgmt_contract.functions.getBatteryManagmentAddr().call({'from': sender})
+        addr = mgmt_contract.functions.getBatteryManagmentAddr().call()
     except:
-        sys.exit("It is not address of a car or service center")
+        sys.exit("Failed")
 
     return addr
 

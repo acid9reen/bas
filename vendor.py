@@ -18,11 +18,6 @@ MGMT_CONTRACT_NAME = "ManagementContract"
 
 
 CONFIG = utils.open_data_base(ACCOUNT_DB_NAME)
-#GAS_PRICE = utils.get_actual_gas_price(w3)
-
-#if CONFIG is not None:
-#    TX_TEMPLATE = {'from': CONFIG['account'], 'gasPrice': GAS_PRICE}
-
 DATABASE = utils.open_data_base(MGMT_CONTRACT_DB_NAME)
 
 # Create empty dict for database dump
@@ -229,7 +224,7 @@ def change_owner(_w3: Web3, _battery_id: str, _new_owner: str) -> str:
 
     tx = {'from': actor, 'gasPrice': utils.get_actual_gas_price(_w3)}
 
-    battery_mgmt_contract_addr = utils.get_battery_managment_contract_addr(_w3, _new_owner)
+    battery_mgmt_contract_addr = utils.get_battery_managment_contract_addr(_w3)
     battery_mgmt_contract = utils.init_battery_management_contract(_w3, battery_mgmt_contract_addr)
 
     utils.unlock_account(_w3, actor, data['password'])
