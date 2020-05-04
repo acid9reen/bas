@@ -11,6 +11,7 @@ from eth_utils import decode_hex
 
 private_key = "0xd016ad062dceb73f7587e25bdfc4d665f8eb6e4f37f2c2c526c25633a63d96ed"
 
+
 def get_db_name():
     return os.path.basename(__file__)[:-3] + ".json"
 
@@ -30,7 +31,7 @@ def open_data_base(_file_name: str) -> Union[dict, None]:
 
     else:
         return None   
- 
+
 
 def write_data_base(_data: dict, _file_name: str) -> None:
     """
@@ -46,7 +47,7 @@ def write_data_base(_data: dict, _file_name: str) -> None:
         json.dump(_data, out)
 
 
-def charge() -> int:
+def charge() -> None:
     """
     Increase battery's charge cycles
 
@@ -63,10 +64,8 @@ def charge() -> int:
     data['Charge cycles'] += 1
     write_data_base(data, f"firmware/{db_name}")
 
-    return data['Charge cycles']
 
-
-def get_battery_info() -> tuple:
+def get_battery_info() -> None:
     charges = open_data_base(f"firmware/{get_db_name()}")['Charge cycles']
     time = int(dt.datetime.utcnow().timestamp())
     _private_key = int(private_key, base=16).to_bytes(32, byteorder='big')
@@ -80,8 +79,9 @@ def get_battery_info() -> tuple:
     r = '0' * (64 -len(hex(battery_id[1])[2:])) + hex(battery_id[1])[2:]
     s = '0' * (64 -len(hex(battery_id[2])[2:])) + hex(battery_id[2])[2:]
 
+    data = {'v': v, 'r': r, 's': s, 'charges': charges, 'time': time}
 
-    return tuple([charges, time, v, r, s])
+    write_data_base(data, f"firmware/{os.path.basename(__file__)[:-3]}_data.json")
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -114,10 +114,9 @@ def main():
     args = parser.parse_args()
 
     if args.charge:
-        print(f"Total charge cycles: {charge()}")
+        charge()
     elif args.get:
-        for info in get_battery_info():
-            print(info)
+        get_battery_info()
 
 
 if __name__ == "__main__":
