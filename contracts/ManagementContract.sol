@@ -75,6 +75,10 @@ contract ManagementContract is Ownable {
         emit Vendor(msg.sender, _nameSym);
     }
 
+    function vendorNamesDataLen(bytes4 _id) public view returns(uint256) {
+        return(vendorNames[_id].length);
+    }
+
     // Registers new batteries, if when calling the method on the balance
     // This manufacturer has enough funds. During registration
     // battery balance decreases according to the number of batteries and
@@ -141,5 +145,15 @@ contract ManagementContract is Ownable {
     function getBatteryManagmentAddr() external view returns(address){
         return address(batteryManagement);
     }
+
+    function vendorNamesDataChunk(bytes4 _id, uint256 n) public view returns(bytes32){
+    uint256 res = 0;
+    uint256 i = 0;
+    while((i<32) && (i<(vendorNamesDataLen(_id)-n*32))) {
+        res = res + uint256(uint8(vendorNames[_id][i+n*32])) * 2 ** ((31-i)*8);
+        i++;
+    }
+    return(bytes32(res));
+}
 
 }

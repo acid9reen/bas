@@ -48,6 +48,11 @@ def create_parser() -> argparse.ArgumentParser:
         help='Verify battery'
     )
 
+    parser.add_argument(
+        '--contract', nargs=4, required=False,
+        help="Get replacement contract"
+    )
+
     return parser
 
 
@@ -89,6 +94,73 @@ def register_scenter(_w3: Web3):
         return "Registration failed"
 
 
+def create_deal(_w3: Web3, _bat_new: str, _bat_old: str, _car: str, _service_price: int):
+    data = utils.open_data_base(ACCOUNT_DB_NAME)
+    
+    if data is None:
+        sys.exit('Cannot access account database')
+    
+    actor = data['account']
+    tx = {'from': actor, 'gasPrice': utils.get_actual_gas_price(_w3)}
+
+    utils.unlock_account(_w3, actor, data['password'])
+  
+    
+    if not os.path.exists(_bat_old):
+        sys.exit('Cannot access service center\'s battery')
+
+    car_battery_info = utils.get_battery_info(_bat_old)
+    v_old = car_battery_info['v']
+    r_old = car_battery_info['r']
+    s_old = car_battery_info['s']
+    charges_old = car_battery_info['charges']
+    time_old = car_battery_info['time']
+
+    if not os.path.exists(_bat_new):
+        sys.exit('Cannot access car\'s battery')
+
+    sc_battery_info = utils.get_battery_info(_bat_new)
+    v_new = sc_battery_info['v']
+    r_new = sc_battery_info['r']
+    s_new = sc_battery_info['s']
+    charges_new = sc_battery_info['charges']
+    time_new = sc_battery_info['time']
+
+    p = (charges_old * (1 << 160) + time_old * (1 << 128) + v_old * (1 << 96) 
+         + charges_new * (1 << 64) + time_new * (1 << 32) + v_new)
+
+    battery_mgmt_contract_address = utils.get_battery_managment_contract_addr(_w3)
+    battery_mgmt_contract = utils.init_battery_management_contract(_w3, battery_mgmt_contract_address)
+    
+    try:
+        tx_hash = battery_mgmt_contract.functions.initiateDeal(p, _w3.toBytes(hexstr=r_old),
+                                                              _w3.toBytes(hexstr=s_old), _w3.toBytes(hexstr=r_new),
+                                                              _w3.toBytes(hexstr=s_new),_car, _service_price).transact(tx)
+        
+        receipt = web3.eth.wait_for_transaction_receipt(_w3, tx_hash, 120, 0.1)
+
+        if receipt.status == 0:
+            sys.exit("Deal was not created.")
+
+    except BaseException as error:
+        
+       # if error.args[0]['message'] == 'insufficient funds for gas * price + value':
+        #    sys.exit('No enough funds to send transaction')
+
+        sys.exit("Deal was not created.")
+    
+    logs = battery_mgmt_contract.events.NewDeal().processReceipt(receipt)[::-1]
+
+    for log in logs:
+        try:
+            if log['args']['newDeal']:
+                address_new_deal = log['args']['newDeal']
+                print(f"Deal: {address_new_deal}")
+                return
+        except:
+            return
+
+
 def main() -> None:
     w3 = Web3(Web3.HTTPProvider(URL))
 
@@ -110,6 +182,13 @@ def main() -> None:
         print(f"Total charges: {data[1]}")
         print(f"Vendor id: {data[2]}")
         print(f"Vendor name: {data[3]}")
+
+    elif args.contract:
+        bat_old = args.contract[0]
+        bat_new = args.contract[1]
+        car = args.contract[2]
+        service_price = int(args.contract[3])
+        create_deal(w3, bat_old, bat_new, car, service_price)
 
     else:
         sys.exit("No parameters provided")

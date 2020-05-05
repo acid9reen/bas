@@ -13,6 +13,8 @@ contract BasicNFToken {
     // @dev A mapping from Token IDs to vendor address
     mapping (bytes20 => address) public tokenID;
 
+    event Approval(address indexed _owner, address indexed _approved, bytes20 _tokenId);
+
     function _setTokenWithID(bytes20 _tokenId, address _data) internal {
         tokenID[_tokenId] = _data;
     }
@@ -26,5 +28,11 @@ contract BasicNFToken {
             // clear any previously approved ownership exchange
             delete tokenIdToApproved[_tokenId];
         }
+    }
+
+    function _approve(address _to, bytes20 _tokenId) internal {
+        tokenIdToApproved[_tokenId] = _to;
+        // Emit approval event.
+        emit Approval(msg.sender, _to, _tokenId);
     }
 }
