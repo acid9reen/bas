@@ -77,34 +77,29 @@ contract BatteryManagement is Ownable, BasicNFToken{
     batteryId = ecrecover(h, _v, _r, _s);
     }
 
-    // Возвращает адрес производителя батареи
-    // - идентификатор батареи
+    // Returns the address of the battery manufacturer
+    // _batteryId - battery identifier
     function vendorOf(bytes20 _batteryId) public view returns(address){
         return tokenID[_batteryId];
     }
 
 
-    // Высчитывает хэш, используемый для проверки на повторное
-    // использование транзакции
-    // - адрес, полученный из подписи и хэша транзакции
-    // - количество заряда батареи
-    // - время получения информации о батарее
+    // Calculates the hash used to check for repeated
+    // use of transaction
+    // _addr - address obtained from the signature and transaction hash
+    // _charges - amount of battery charge
+    // _time - time for receiving battery information
     function generateStatusUsageHash(address _addr, uint256 _charges, uint256 _time)
     internal pure returns (bytes32){
         return keccak256(abi.encodePacked(_addr, _charges, _time));
     }
 
 
-    // Проверяет цифровую подпись для данных и возвращает результат
-    // проверки и адрес вендора.
-    // Результат проверки: 0 - результат проверки цифровой подписи, показывает
-    // что она сделана батареей, для которой существует токен; 1 - транзакция
-    // с таким статусом уже отправлялась в блокчейн, что указывает на возможную
-    // прослушку траффика; 2 - для батареи нет соответствующего токена; 999 -
-    // другая ошибка.
-    // - число зарядов
-    // - временная метка
-    // - v, r, s компоненты цифровой подписи
+    // Verifies the digital signature for the data and returns the result
+    // checks (True - if the battery exists, False - if not) and the vendor address.
+    // _v, _r, _s - v, r, s digital signature components
+    // _charges - number of charges
+    // _time - timestamp
     function verifyBattery(uint8 _v, bytes32 _r, bytes32 _s, uint256 _charges, uint256 _time) public view
     returns(bool, address) {
         address batteryId = getBatteryIdFromSignature(_v, _r, _s, _charges, _time);
