@@ -135,6 +135,11 @@ def create_parser() -> argparse.ArgumentParser:
         help='Register the vehicle in the chain'
     )
 
+    parser.add_argument(
+        '--verify', type=str, required=False,
+        help='Verify battery'
+    )
+
     return parser
 
 
@@ -153,6 +158,13 @@ def main():
         get_car_account_from_db(w3)
     elif args.reg:
         print(register_car(w3))
+
+    elif args.verify:
+        data = utils.verify_battery(w3, args.verify)
+        print(f"Verified: {data[0]}")
+        print(f"Total charges: {data[1]}")
+        print(f"Vendor id: {data[2]}")
+        print(f"Vendor name: {data[3]}")
 
 
 if __name__ == "__main__":
