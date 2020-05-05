@@ -1,5 +1,4 @@
 import sys, os
-import subprocess
 import argparse
 import web3
 from web3 import Web3
@@ -90,54 +89,6 @@ def register_scenter(_w3: Web3):
         return "Registration failed"
 
 
-def get_battery_info(_path: str) -> dict:
-    """
-    Get battery info(v, r, s, charges, time)
-
-    :param str _path: Path to battery's firmware
-    :return: Battery's info
-    :rtype: dict
-    """
-
-    if os.path.exists(f"{_path}"):
-        subprocess.run(["python", f"{_path}", "--get"])
-    else:
-        sys.exit("Battery does not exist")
-
-    return utils.open_data_base(f"{_path[:-3]}_data.json")
-
-
-def verify_battery(_w3: Web3, _path: str):
-    """
-    Verify battery firmware
-
-    :param Web3 _w3: Web3 instance
-    :param str _path: Path to firmware
-    :return:
-    :rtype:
-    """
-
-    verified = False
-    battery_info = get_battery_info(_path)
-
-    if battery_info is None:
-        sys.exit("The battery does not exist")
-
-    battery_mgmt_addr = utils.get_battery_managment_contract_addr(_w3)
-    battery_mgmt_contract = utils.init_battery_management_contract(_w3, battery_mgmt_addr)
-
-    # TODO implement verifyBattery in battery management contract
-    verified, vendor_address = battery_mgmt_contract.functions.verifyBattery(battery_info['v'], _w3.toBytes(hexstr=battery_info['r']),
-                                                             _w3.toBytes(hexstr=battery_info['s']), battery_info['charges'],
-                                                             battery_info['time']).call()
-
-    mgmt_contract = utils.init_management_contract(_w3)
-    vendor_id = _w3.toHex(mgmt_contract.functions.vendorId(vendor_address).call())
-    vendor_name = (mgmt_contract.functions.vendorNames(vendor_id).call()).decode()
-
-    return verified, battery_info['charges'], vendor_id, vendor_name
-
-
 def main() -> None:
     w3 = Web3(Web3.HTTPProvider(URL))
 
@@ -154,7 +105,7 @@ def main() -> None:
         print(register_scenter(w3))
     
     elif args.verify:
-        data = verify_battery(w3, args.verify)
+        data = utils.verify_battery(w3, args.verify)
         print(f"Verified: {data[0]}")
         print(f"Total charges: {data[1]}")
         print(f"Vendor id: {data[2]}")

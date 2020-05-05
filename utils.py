@@ -1,4 +1,5 @@
 import sys, os
+import subprocess
 import json
 from typing import Union
 from random import random
@@ -298,3 +299,50 @@ def create_script_from_tmpl(private_key, address: str):
 
     with open(f"firmware/{address[2:10]}.py", 'w') as fw:
         fw.writelines(lines)
+
+
+def get_battery_info(_path: str) -> dict:
+    """
+    Get battery info(v, r, s, charges, time)
+
+    :param str _path: Path to battery's firmware
+    :return: Battery's info
+    :rtype: dict
+    """
+
+    if os.path.exists(f"{_path}"):
+        subprocess.run(["python", f"{_path}", "--get"])
+    else:
+        sys.exit("Battery does not exist")
+
+    return open_data_base(f"{_path[:-3]}_data.json")
+
+
+def verify_battery(_w3: Web3, _path: str):
+    """
+    Verify battery firmware
+
+    :param Web3 _w3: Web3 instance
+    :param str _path: Path to firmware
+    :return:
+    :rtype:
+    """
+
+    verified = False
+    battery_info = get_battery_info(_path)
+
+    if battery_info is None:
+        sys.exit("The battery does not exist")
+
+    battery_mgmt_addr = get_battery_managment_contract_addr(_w3)
+    battery_mgmt_contract = init_battery_management_contract(_w3, battery_mgmt_addr)
+
+    verified, vendor_address = battery_mgmt_contract.functions.verifyBattery(battery_info['v'], _w3.toBytes(hexstr=battery_info['r']),
+                                                             _w3.toBytes(hexstr=battery_info['s']), battery_info['charges'],
+                                                             battery_info['time']).call()
+
+    mgmt_contract = init_management_contract(_w3)
+    vendor_id = _w3.toHex(mgmt_contract.functions.vendorId(vendor_address).call())
+    vendor_name = (mgmt_contract.functions.vendorNames(vendor_id).call()).decode()
+
+    return verified, battery_info['charges'], vendor_id, vendor_name
