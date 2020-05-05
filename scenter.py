@@ -99,9 +99,9 @@ def get_battery_info(_path: str) -> dict:
     :rtype: dict
     """
 
-    try:
+    if os.path.exists(f"{_path}"):
         subprocess.run(["python", f"{_path}", "--get"])
-    except:
+    else:
         sys.exit("Battery does not exist")
 
     return utils.open_data_base(f"{_path[:-3]}_data.json")
@@ -119,6 +119,9 @@ def verify_battery(_w3: Web3, _path: str):
 
     verified = False
     battery_info = get_battery_info(_path)
+
+    if battery_info is None:
+        sys.exit("The battery does not exist")
 
     battery_mgmt_addr = utils.get_battery_managment_contract_addr(_w3)
     battery_mgmt_contract = utils.init_battery_management_contract(_w3, battery_mgmt_addr)
