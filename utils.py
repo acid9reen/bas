@@ -7,6 +7,7 @@ import web3
 from web3 import Web3
 from web3._utils.threads import Timeout
 from solcx import compile_files
+from eth_utils import decode_hex
 
 
 MGMT_CONTRACT_DB_NAME = 'database.json'
@@ -346,3 +347,37 @@ def verify_battery(_w3: Web3, _path: str):
     vendor_name = (mgmt_contract.functions.vendorNames(vendor_id).call()).decode()
 
     return verified, battery_info['charges'], vendor_id, vendor_name
+
+
+def change_owner(_w3: Web3, _battery_id: str, _new_owner: str, account_db_name: str) -> str:
+    """
+    Change the owner of battery
+
+    :param Web3 _w3: Web3 instance
+    :param str _battery_id: battery ID
+    :param str _new_owner: New owner address
+    :return: Status message
+    :rtype: str    
+
+    """
+
+    data = open_data_base(account_db_name)
+    actor = data['account']
+
+    tx = {'from': actor, 'gasPrice': get_actual_gas_price(_w3)}
+
+    battery_mgmt_contract_addr = get_battery_managment_contract_addr(_w3)
+    battery_mgmt_contract = init_battery_management_contract(_w3, battery_mgmt_contract_addr)
+
+    unlock_account(_w3, actor, data['password'])
+
+    
+    tx_hash = battery_mgmt_contract.functions.transfer(_new_owner, decode_hex(_battery_id)).transact(tx)
+    receipt = web3.eth.wait_for_transaction_receipt(_w3, tx_hash, 120, 0.1)
+    result = receipt.status
+
+    if result == 1:
+        return "Ownership change was successfull"
+    else:
+        return "Ownership change failed"
+
