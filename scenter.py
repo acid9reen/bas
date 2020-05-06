@@ -49,7 +49,7 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        '--approve_reeplacement', nargs=2, required=False,
+        '--approve_replacement', nargs=3, required=False,
         help="Battery replacement <car_battery> <sc_battery> <car_address>"
     )
 

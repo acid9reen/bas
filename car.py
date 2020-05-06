@@ -180,7 +180,7 @@ def get_sc_address() -> str:
     command = "python scenter.py --get_address".split(' ')
     result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
-    return result.stdout
+    return result.stdout[:-1]
 
 
 def transfer_battery_to_sc(w3: Web3, car_battery_id: str, sc_address: str):
@@ -205,14 +205,14 @@ def transfer_battery_to_sc(w3: Web3, car_battery_id: str, sc_address: str):
     gas_price = utils.get_actual_gas_price(w3)
 
     nonce = w3.eth.getTransactionCount(car_address)
-    tx = {'gasPrice': gas_price, 'nonce': nonce}
+    tx = {'gasPrice': gas_price, 'nonce': nonce, 'gas': 2204 * 68 + 21000}
 
     reg_tx = battery_mgmt_contract.functions.transfer(sc_address, decode_hex(car_battery_id)).buildTransaction(tx)
     sign_tx = w3.eth.account.signTransaction(reg_tx, private_key)
     tx_hash = w3.eth.sendRawTransaction(sign_tx.rawTransaction)
     receipt = web3.eth.wait_for_transaction_receipt(w3, tx_hash, 120, 0.1)
 
-    if receipt.status != 1:
+    if receipt.status != 0:
         sys.exit("Something went wrong...")
 
 
@@ -229,7 +229,7 @@ def get_new_battery(car_account: str, car_battery_id: str, sc_battery_id) -> flo
     command = f"python scenter.py --transfer_battery_to_car {car_account} {car_battery_id} {sc_battery_id}".split(' ')
     result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
-    return float(result.stdout)
+    return float(result.stdout[:-1])
 
 
 def initiate_replacement(w3: Web3, car_battery_id: str, sc_battery_id: str) -> None:

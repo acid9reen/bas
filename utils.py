@@ -364,7 +364,7 @@ def change_owner(_w3: Web3, _battery_id: str, _new_owner: str, account_db_name: 
     data = open_data_base(account_db_name)
     actor = data['account']
 
-    tx = {'from': actor, 'gasPrice': get_actual_gas_price(_w3)}
+    tx = {'from': actor, 'gasPrice': get_actual_gas_price(_w3), 'gas':2204 * 68 + 21000}
 
     battery_mgmt_contract_addr = get_battery_managment_contract_addr(_w3)
     battery_mgmt_contract = init_battery_management_contract(_w3, battery_mgmt_contract_addr)
