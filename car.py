@@ -22,47 +22,6 @@ if DATABASE is None:
     sys.exit("Setup hasn't been done")
 
 
-def generate_private_key(_w3: Web3) -> str:
-    """
-    Generate private key for car account using current time and random int
-    
-    :param Web3 _w3: Web3 instance
-    :return: Private Key
-    :rtype: str
-    """
-
-    t = int(dt.datetime.utcnow().timestamp())
-    k = randint(0, 2 ** 16)
-    privateKey = _w3.toHex(_w3.sha3(((t + k).to_bytes(32, 'big'))))
-    if privateKey[:2] == '0x':
-        privateKey = privateKey[2:]
-
-    return (privateKey)
-
-
-def new_car_account(_w3: Web3) -> None:
-    """
-    Create new addres for car account
-    
-    :param Web3 _w3: Web3 instance
-    """
-
-    privateKey = generate_private_key(_w3)
-    data = {"key": privateKey}
-    utils.write_data_base(data, ACCOUNT_DB_NAME)
-    print(_w3.eth.account.privateKeyToAccount(data['key']).address)
-
-
-def get_car_account_from_db(_w3: Web3) -> None:
-    """
-    Get car account from database
-
-    :param Web3 _w3: Web3 instance
-    """
-
-    return (_w3.eth.account.privateKeyToAccount(utils.get_data_from_db(ACCOUNT_DB_NAME, 'key')).address)
-
-
 def register_car(_w3: Web3):
     """
     Register new car
@@ -80,28 +39,33 @@ def register_car(_w3: Web3):
     if data is None:
         return 'Cannot access account database'
 
-    private_key = data['key']
+    actor = data['account']
+    tx = {'from': actor, 'gasPrice': utils.get_actual_gas_price(_w3)}
+
     mgmt_contract = utils.init_management_contract(_w3)
-    car_address = _w3.eth.account.privateKeyToAccount(private_key).address
+
+    utils.unlock_account(_w3, actor, data['password'])
+
+
     registration_required_gas = 50000
     gas_price = utils.get_actual_gas_price(_w3)
 
-    if registration_required_gas * gas_price > _w3.eth.getBalance(car_address):
+    if registration_required_gas * gas_price > _w3.eth.getBalance(actor):
         return 'No enough funds to send transaction'
 
-    nonce = _w3.eth.getTransactionCount(car_address)
-    tx = {'gasPrice': gas_price, 'nonce': nonce}
 
-    regTx = mgmt_contract.functions.registerCar().buildTransaction(tx)
-    signTx = _w3.eth.account.signTransaction(regTx, private_key)
-    txHash = _w3.eth.sendRawTransaction(signTx.rawTransaction)
-    receipt = web3.eth.wait_for_transaction_receipt(_w3, txHash, 120, 0.1)
+    try:
+        tx_hash = mgmt_contract.functions.registerCar().transact(tx)
+    except ValueError:
+        sys.exit("Already registered")
+
+    receipt = web3.eth.wait_for_transaction_receipt(_w3, tx_hash, 120, 0.1)
 
     if receipt.status == 1:
-        return 'Registered succsessfully'        
+        return "Registered successfully"
+    
     else:
-        return 'Car registration failed'
-
+        return "Registration failed"
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -188,31 +152,9 @@ def transfer_battery_to_sc(w3: Web3, car_battery_id: str, sc_address: str):
 
     """
 
-    data = utils.open_data_base(MGMT_CONTRACT_DB_NAME)
+    result = utils.change_owner(w3, car_battery_id, sc_address, ACCOUNT_DB_NAME)
 
-    if data is None:
-        return 'Cannot access management contract database'
-        
-    data = utils.open_data_base(ACCOUNT_DB_NAME)
-
-    if data is None:
-        return 'Cannot access account database'
-
-    private_key = data['key']
-    battery_mgmt_contract_addr = utils.get_battery_managment_contract_addr(w3)
-    battery_mgmt_contract = utils.init_battery_management_contract(w3, battery_mgmt_contract_addr)
-    car_address = w3.eth.account.privateKeyToAccount(private_key).address
-    gas_price = utils.get_actual_gas_price(w3)
-
-    nonce = w3.eth.getTransactionCount(car_address)
-    tx = {'gasPrice': gas_price, 'nonce': nonce, 'gas': 2204 * 68 + 21000}
-
-    reg_tx = battery_mgmt_contract.functions.transfer(sc_address, decode_hex(car_battery_id)).buildTransaction(tx)
-    sign_tx = w3.eth.account.signTransaction(reg_tx, private_key)
-    tx_hash = w3.eth.sendRawTransaction(sign_tx.rawTransaction)
-    receipt = web3.eth.wait_for_transaction_receipt(w3, tx_hash, 120, 0.1)
-
-    if receipt.status != 0:
+    if 'failed' in result:
         sys.exit("Something went wrong...")
 
 
@@ -251,7 +193,10 @@ def initiate_replacement(w3: Web3, car_battery_id: str, sc_battery_id: str) -> N
     if not data[0]:
         sys.exit("The battery is fake")
 
-    ask_for_replacement(car_battery_id, sc_battery_id, get_car_account_from_db(w3))
+    data = utils.open_data_base(ACCOUNT_DB_NAME)
+    actor = data['account']
+
+    ask_for_replacement(car_battery_id, sc_battery_id, actor)
 
     message = utils.open_data_base('replacement.json')
 
@@ -265,7 +210,7 @@ def initiate_replacement(w3: Web3, car_battery_id: str, sc_battery_id: str) -> N
 
     transfer_battery_to_sc(w3, car_battery_id, sc_address)
     
-    return get_new_battery(get_car_account_from_db(w3), car_battery_id, sc_battery_id)
+    return get_new_battery(actor, car_battery_id, sc_battery_id)
 
 
 def main():
@@ -278,10 +223,7 @@ def main():
     args = parser.parse_args()
 
     if args.new:
-        new_car_account(w3)
-    
-    elif args.account:
-        print(get_car_account_from_db(w3))
+        print(utils.create_new_account(w3, args.new, ACCOUNT_DB_NAME))
 
     elif args.reg:
         print(register_car(w3))
