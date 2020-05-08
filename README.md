@@ -3,20 +3,21 @@
 Battery authentication system - это программное обеспечение призванное исключить возможность мошенничества со сторон участников сделки по замене аккумуляторных батарей в электромобиле. Предполагается что сделка проходит без участия человека, то есть станция по замене батареи и электромобиль могут быть полностью автономными.
 
 ## Установка
-1. [Установите go-ethereum](https://github.com/ethereum/go-ethereum)
-2. Установите используемые проектом библиотеки для Python
+1. [Установите python](https://www.python.org/)
+2. [Установите go-ethereum](https://github.com/ethereum/go-ethereum)
+3. Установите используемые проектом библиотеки для Python
 
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Установите компилятор Solidity
+4. Установите компилятор Solidity
 
 ```bash
 python -m solc.install v0.6.4
 ```
 
-4. Скачайте исходный код с помощью HTTPS
+5. Скачайте исходный код с помощью HTTPS
 
 ```bash
 git clone https://gitlab.com/acid9reen/bas.git
@@ -91,6 +92,15 @@ python vendor.py --regfee
 python vendor.py --batfee
 ```
 
+#### Продажа батареи сервисному центру или автомобилю при производстве
+
+```bash
+python vendor.py --owner <battery_id> <new_owner>
+```
+
+Где *battery_id* это идентификатор батареи
+*new_owner* - покупатель батареи
+
 * ### Для сущности сервисного центра
 
 #### Создание аккаунта
@@ -106,6 +116,13 @@ python scenter.py --new <password>
 python scenter.py --reg
 ```
 
+#### Верификация батареи
+
+```bash
+python scenter.py --verify <battery_id>
+```
+Где *battery_id* - идентификатор батареи
+
 * ### Для сущности электромобиля
 
 #### Создание аккаунта
@@ -119,3 +136,18 @@ python car.py --new
 ```bash
 python car.py --reg
 ```
+
+#### Верификация батареи
+
+```bash
+python scenter.py --verify <battery_id>
+```
+Где *battery_id* - идентификатор батареи
+
+#### Инициализация сделаки
+
+```bash
+python scenter.py --initiate_replacement <car_battery_id> <sc_battery_id>
+```
+Где *car_battery_id* - идентификатор батареи электромобиля
+*sc_battery_id* - идентификатор батареи сервисного центра
