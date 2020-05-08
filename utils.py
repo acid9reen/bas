@@ -1,4 +1,5 @@
-import os
+import sys, os
+import subprocess
 import json
 from typing import Union
 from random import random
@@ -6,11 +7,14 @@ import web3
 from web3 import Web3
 from web3._utils.threads import Timeout
 from solcx import compile_files
+from eth_utils import decode_hex
 
 
 MGMT_CONTRACT_DB_NAME = 'database.json'
 MGMT_CONTRACT_SRC_PATH = r"./contracts/ManagementContract.sol"
 MGMT_CONTRACT_NAME = "ManagementContract"
+BATTERY_MGMT_CONTRACT_SRC_PATH = r"./contracts/BatteryManagement.sol"
+BATTERY_MGMT_CONTRACT_NAME = "BatteryManagement"
 REGISTRATION_REQUIRED_GAS = 50000
 
 
@@ -236,7 +240,7 @@ def initialize_contract_factory(_w3: Web3, _compiled_contracts, _key: str, _addr
     :params Web3 _w3: Web3 instance
     :params _compiled_contracts: Compiled contracts
     :params str _key: Contract path + name
-    :params str _address: Target adsress
+    :params str _address: Target address
     :return: Contract instance
     :rtype: Contract
     """
@@ -253,3 +257,127 @@ def initialize_contract_factory(_w3: Web3, _compiled_contracts, _key: str, _addr
         )
 
     return contract
+
+
+def get_battery_managment_contract_addr(_w3: Web3) -> str:
+    """
+    :params Web3 _w3: Web3 instance
+    :return: Contract's address
+    :rtype: str
+    """
+
+    try:
+        mgmt_contract = init_management_contract(_w3)
+        addr = mgmt_contract.functions.getBatteryManagmentAddr().call()
+    except:
+        sys.exit("Failed")
+
+    return addr
+
+
+def init_battery_management_contract(_w3: Web3, addr: str):
+    """
+    Creates battery management contract object
+
+    :param Web3 _w3: Web3 instance
+    :param str addr: Battery management contract's address
+    :return: Battery management contract
+    :rtype: Contract instance
+    """
+
+    compiled = compile_contracts(BATTERY_MGMT_CONTRACT_SRC_PATH)
+    battery_mgmt_contract = initialize_contract_factory(_w3, compiled, BATTERY_MGMT_CONTRACT_SRC_PATH + ":" + BATTERY_MGMT_CONTRACT_NAME,
+                                                        addr)
+    
+    return battery_mgmt_contract
+
+
+def create_script_from_tmpl(private_key, address: str):
+    with open("batteryTemplate.py", 'r') as tmpl:
+        lines = tmpl.readlines()
+    
+    lines[11] = f"private_key = '{private_key}'\n"
+
+    with open(f"firmware/{address[2:10]}.py", 'w') as fw:
+        fw.writelines(lines)
+
+
+def get_battery_info(_path: str) -> dict:
+    """
+    Get battery info(v, r, s, charges, time)
+
+    :param str _path: Path to battery's firmware
+    :return: Battery's info
+    :rtype: dict
+    """
+
+    if os.path.exists(f"{_path}"):
+        subprocess.run(["python", f"{_path}", "--get"])
+    else:
+        sys.exit("Battery does not exist")
+
+    return open_data_base(f"{_path[:-3]}_data.json")
+
+
+def verify_battery(_w3: Web3, _path: str):
+    """
+    Verify battery firmware
+
+    :param Web3 _w3: Web3 instance
+    :param str _path: Path to firmware
+    :return:
+    :rtype:
+    """
+
+    verified = False
+    battery_info = get_battery_info(_path)
+
+    if battery_info is None:
+        sys.exit("The battery does not exist")
+
+    battery_mgmt_addr = get_battery_managment_contract_addr(_w3)
+    battery_mgmt_contract = init_battery_management_contract(_w3, battery_mgmt_addr)
+
+    verified, vendor_address = battery_mgmt_contract.functions.verifyBattery(battery_info['v'], _w3.toBytes(hexstr=battery_info['r']),
+                                                             _w3.toBytes(hexstr=battery_info['s']), battery_info['charges'],
+                                                             battery_info['time']).call()
+
+    mgmt_contract = init_management_contract(_w3)
+    vendor_id = _w3.toHex(mgmt_contract.functions.vendorId(vendor_address).call())
+    vendor_name = (mgmt_contract.functions.vendorNames(vendor_id).call()).decode()
+
+    return verified, battery_info['charges'], vendor_id, vendor_name
+
+
+def change_owner(_w3: Web3, _battery_id: str, _new_owner: str, account_db_name: str) -> str:
+    """
+    Change the owner of battery
+
+    :param Web3 _w3: Web3 instance
+    :param str _battery_id: battery ID
+    :param str _new_owner: New owner address
+    :return: Status message
+    :rtype: str    
+
+    """
+
+    data = open_data_base(account_db_name)
+    actor = data['account']
+
+    tx = {'from': actor, 'gasPrice': get_actual_gas_price(_w3), 'gas':2204 * 68 + 21000}
+
+    battery_mgmt_contract_addr = get_battery_managment_contract_addr(_w3)
+    battery_mgmt_contract = init_battery_management_contract(_w3, battery_mgmt_contract_addr)
+
+    unlock_account(_w3, actor, data['password'])
+
+    
+    tx_hash = battery_mgmt_contract.functions.transfer(_new_owner, decode_hex(_battery_id)).transact(tx)
+    receipt = web3.eth.wait_for_transaction_receipt(_w3, tx_hash, 120, 0.1)
+    result = receipt.status
+
+    if result == 1:
+        return "Ownership change was successfull"
+    else:
+        return "Ownership change failed"
+

@@ -3,6 +3,7 @@ import argparse
 import web3
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
+from eth_utils import decode_hex
 
 # Project modules
 import utils
@@ -17,11 +18,6 @@ MGMT_CONTRACT_NAME = "ManagementContract"
 
 
 CONFIG = utils.open_data_base(ACCOUNT_DB_NAME)
-#GAS_PRICE = utils.get_actual_gas_price(w3)
-
-#if CONFIG is not None:
-#    TX_TEMPLATE = {'from': CONFIG['account'], 'gasPrice': GAS_PRICE}
-
 DATABASE = utils.open_data_base(MGMT_CONTRACT_DB_NAME)
 
 # Create empty dict for database dump
@@ -91,10 +87,15 @@ def register_battery(_w3: Web3, _count: int, _value: float=0):
     result = receipt.status
 
     if result >= 1:
-        return bat_keys
+        for battery in bat_keys:
+            utils.create_script_from_tmpl(hex(int.from_bytes(battery[0], byteorder='big')),
+                                          battery[1])
+
+
+        return [x[1] for x in bat_keys]
         
     else:
-        return 'Batteries registration failed'
+        sys.exit('Batteries registration failed')
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -143,6 +144,11 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '--deposit', action='store_true', required=False,
         help="Show vendor's deposit"
+    )
+
+    parser.add_argument(
+        '--owner', nargs=2, required=False,
+        help='Change battery owner'
     )
 
     return parser
@@ -201,6 +207,38 @@ def del_hex_prefix(_str: str) -> str:
     return _str
 
 
+def change_owner(_w3: Web3, _battery_id: str, _new_owner: str) -> str:
+    """
+    Change the owner of battery
+
+    :param Web3 _w3: Web3 instance
+    :param str _battery_id: battery ID
+    :param str _new_owner: New owner address
+    :return: Status message
+    :rtype: str    
+
+    """
+
+    data = utils.open_data_base(ACCOUNT_DB_NAME)
+    actor = data['account']
+
+    tx = {'from': actor, 'gasPrice': utils.get_actual_gas_price(_w3), 'gas': 2204 * 68 + 21000}
+
+    battery_mgmt_contract_addr = utils.get_battery_managment_contract_addr(_w3)
+    battery_mgmt_contract = utils.init_battery_management_contract(_w3, battery_mgmt_contract_addr)
+
+    utils.unlock_account(_w3, actor, data['password'])
+
+    tx_hash = battery_mgmt_contract.functions.transfer(_new_owner, decode_hex(_battery_id)).transact(tx)
+    receipt = web3.eth.wait_for_transaction_receipt(_w3, tx_hash, 120, 0.1)
+    result = receipt.status
+
+    if result == 1:
+        return "Ownership change was successfull"
+    else:
+        return "Ownership change failed"
+
+
 def main() -> None:
     w3 = Web3(Web3.HTTPProvider(URL))
 
@@ -244,10 +282,8 @@ def main() -> None:
 
         if isinstance(result, list):
             for bat_id in result:
-                print(bat_id)
-        else:
-            print(result)
-    
+                print(f'Created battery with id: {bat_id[2:]}')
+
     elif args.regfee:
         print(f'Vendor registration fee: {get_fee(w3) * 1000} eth')
     
@@ -256,6 +292,9 @@ def main() -> None:
 
     elif args.deposit:
         print(f"Vendor deposit: {get_deposit(w3)} eth")
+
+    elif args.owner:
+        print(change_owner(w3, args.owner[0], args.owner[1]))
 
     else:
         sys.exit("No parameters provided")

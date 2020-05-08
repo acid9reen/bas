@@ -38,21 +38,25 @@ contract ManagementContract is Ownable {
     // To alert you when a new battery is created
     // - manufacturer identifier
     // - battery identifier
-    event NewBattery(bytes4, bytes20);
+    event NewBattery(bytes4 tokenId, bytes20 batteryId);
 
     // Contract constructor
-    // - address of the contract responsible for the accumulation of cryptocurrency,
+    // _serviceProviderWalletAddr - address of the contract responsible for the accumulation of cryptocurrency,
     //    transferred as a deposit for using the service.
-    // - the amount of the charge for the release of one battery
+    // _batfee - the amount of the charge for the release of one battery
     constructor(address payable _serviceProviderWalletAddr, uint256 _batfee) public{
+        require(_batfee > 0, "Too low fee");
+
         batFee = _batfee;
         serviceProviderWallet = ServiceProviderWallet(_serviceProviderWalletAddr);
     }
 
+    // Sets address of the battery management contract
     function setBatteryManagementContract(address _batteryMgmtContractAddr) public{
         batteryManagement = BatteryManagement(_batteryMgmtContractAddr);
     }
 
+    //Register new vendor
     function registerVendor(bytes memory _name) public payable{
         require(msg.value >= batFee * 1000, "Not enough money");
         require(!registeredVendor[_name], "Vendor have been already registered");
@@ -84,12 +88,14 @@ contract ManagementContract is Ownable {
         require(_tokenId != "", "Vendor haven't been registered");
 
         vendorDeposit[msg.sender] += msg.value - (_n * batFee);
+
         if (msg.value > 0){
             address(serviceProviderWallet).transfer(msg.value);
         }
 
         for (uint i = 0; i < _n; i++){
             batteryManagement.createBattery(msg.sender, _ids[i]);
+
             emit NewBattery(_tokenId, _ids[i]);
         }
 
@@ -101,6 +107,7 @@ contract ManagementContract is Ownable {
     function registerServiceCenter() public{
         require(!cars[msg.sender], "Service center have been already registered");
         require(!serviceCenters[msg.sender], "Service center have been already registered");
+
         serviceCenters[msg.sender] = true;
     }
 
@@ -111,6 +118,7 @@ contract ManagementContract is Ownable {
     function registerCar() public payable{
         require(!cars[msg.sender], "Car have been already registered");
         require(!serviceCenters[msg.sender], "Car have been already registered");
+
         cars[msg.sender] = true;
     }
 
@@ -129,5 +137,9 @@ contract ManagementContract is Ownable {
         return vendorDeposit[msg.sender];
     }
 
-}
+    //Gets battaryManagment contract address
+    function getBatteryManagmentAddr() external view returns(address){
+        return address(batteryManagement);
+    }
 
+}

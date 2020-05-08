@@ -1,8 +1,9 @@
-pragma solidity 0.6.4;
+pragma solidity ^0.6.4;
 
 import './lib/Ownable.sol';
 
 contract ServiceProviderWallet is Ownable {
+
     // To notify the receipt of new funds
     // - address from which funds are transferred
     // - amount of receipt

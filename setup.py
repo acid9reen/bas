@@ -61,7 +61,7 @@ def set_fee(_w3: Web3, _fee: float):
     data = utils.open_data_base(ACCOUNT_DB_NAME)
     actor = data['account']
 
-    tx = {'from': actor, 'gasPrice': utils.get_actual_gas_price}
+    tx = {'from': actor, 'gasPrice': utils.get_actual_gas_price(_w3)}
 
     mgmt_contract = utils.init_management_contract(_w3)
 

@@ -43,6 +43,26 @@ def create_parser() -> argparse.ArgumentParser:
         help='Register service scenter in the chain'
     )
 
+    parser.add_argument(
+        '--verify', type=str, required=False,
+        help='Verify battery'
+    )
+
+    parser.add_argument(
+        '--approve_replacement', nargs=3, required=False,
+        help="Battery replacement <car_battery> <sc_battery> <car_address>"
+    )
+
+    parser.add_argument(
+        '--get_address', action='store_true', required=False,
+        help='Get address of service center'
+    )
+
+    parser.add_argument(
+        '--transfer_battery_to_car', nargs=3, required=False,
+        help='Transfer battery to the car <car_account> <car_battery_id> <sc_battery_id>'
+    )
+
     return parser
 
 
@@ -84,6 +104,43 @@ def register_scenter(_w3: Web3):
         return "Registration failed"
 
 
+def approve_replacement(w3: Web3, car_battery_id: str, sc_battery_id: str, car_address: str) -> None:
+    """
+
+    """
+
+    sc_battery_id_path = f"firmware/{car_battery_id[:8]}.py"
+    car_battery_id_path = f"firmware/{sc_battery_id[:8]}.py"
+
+    data = utils.verify_battery(w3, car_battery_id_path)
+    message = {'approved': False}
+
+    if data[0]:
+        message['approved'] = True
+    
+    message['error'] = "Car's battery probably is fake"
+
+    utils.write_data_base(message, 'replacement.json')
+        
+
+def get_addr() -> str:
+    data = utils.open_data_base(ACCOUNT_DB_NAME)
+    return data['account']
+
+
+def get_work_cost(car_battery_id, sc_battery_id) -> float:
+    return 0.005
+
+
+def transfer_battery_to_car(w3: Web3, car_account: str, car_battery_id: str, sc_battery_id) -> float:
+    result = utils.change_owner(w3, car_battery_id, car_account, ACCOUNT_DB_NAME)
+
+    if 'failed' in result:
+        sys.exit("Something went wrong...")
+
+    return get_work_cost(car_battery_id, sc_battery_id)
+
+
 def main() -> None:
     w3 = Web3(Web3.HTTPProvider(URL))
 
@@ -95,8 +152,26 @@ def main() -> None:
 
     if args.new:
         print(utils.create_new_account(w3, args.new, ACCOUNT_DB_NAME))
+   
     elif args.reg:
         print(register_scenter(w3))
+    
+    elif args.verify:
+        data = utils.verify_battery(w3, args.verify)
+        print(f"Verified: {data[0]}")
+        print(f"Total charges: {data[1]}")
+        print(f"Vendor id: {data[2]}")
+        print(f"Vendor name: {data[3]}")
+
+    elif args.approve_replacement:
+        approve_replacement(w3, args.approve_replacement[0], args.approve_replacement[1], args.approve_replacement[2])
+    
+    elif args.get_address:
+        print(get_addr())
+
+    elif args.transfer_battery_to_car:
+        print(transfer_battery_to_car(w3, args.transfer_battery_to_car[0], args.transfer_battery_to_car[1], args.transfer_battery_to_car[2]))
+
     else:
         sys.exit("No parameters provided")
 
