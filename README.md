@@ -101,6 +101,12 @@ python vendor.py --owner <battery_id> <new_owner>
 Где *battery_id* это идентификатор батареи
 *new_owner* - покупатель батареи
 
+#### Получение остатка по депозиту
+
+```bash
+python vendor.py --deposit
+```
+
 * ### Для сущности сервисного центра
 
 #### Создание аккаунта
