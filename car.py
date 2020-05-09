@@ -22,6 +22,58 @@ if DATABASE is None:
     sys.exit("Setup hasn't been done")
 
 
+class bcolors:
+	HEADER = '\033[95m'
+	OKBLUE = '\033[94m'
+	OKGREEN = '\033[92m'
+	WARNING = '\033[93m'
+	FAIL = '\033[91m'
+	ENDC = '\033[0m'
+	BOLD = '\033[1m'
+	UNDERLINE = '\033[4m'
+
+
+def generate_private_key(_w3: Web3) -> str:
+    """
+    Generate private key for car account using current time and random int
+    
+    :param Web3 _w3: Web3 instance
+    :return: Private Key
+    :rtype: str
+    """
+
+    t = int(dt.datetime.utcnow().timestamp())
+    k = randint(0, 2 ** 16)
+    privateKey = _w3.toHex(_w3.sha3(((t + k).to_bytes(32, 'big'))))
+    if privateKey[:2] == '0x':
+        privateKey = privateKey[2:]
+
+    return (privateKey)
+
+
+def new_car_account(_w3: Web3) -> None:
+    """
+    Create new addres for car account
+    
+    :param Web3 _w3: Web3 instance
+    """
+
+    privateKey = generate_private_key(_w3)
+    data = {"key": privateKey}
+    utils.write_data_base(data, ACCOUNT_DB_NAME)
+    print(_w3.eth.account.privateKeyToAccount(data['key']).address)
+
+
+def get_car_account_from_db(_w3: Web3) -> None:
+    """
+    Get car account from database
+
+    :param Web3 _w3: Web3 instance
+    """
+
+    return (_w3.eth.account.privateKeyToAccount(utils.get_data_from_db(ACCOUNT_DB_NAME, 'key')).address)
+
+
 def register_car(_w3: Web3):
     """
     Register new car
@@ -39,33 +91,28 @@ def register_car(_w3: Web3):
     if data is None:
         return 'Cannot access account database'
 
-    actor = data['account']
-    tx = {'from': actor, 'gasPrice': utils.get_actual_gas_price(_w3)}
-
+    private_key = data['key']
     mgmt_contract = utils.init_management_contract(_w3)
-
-    utils.unlock_account(_w3, actor, data['password'])
-
-
+    car_address = _w3.eth.account.privateKeyToAccount(private_key).address
     registration_required_gas = 50000
     gas_price = utils.get_actual_gas_price(_w3)
 
-    if registration_required_gas * gas_price > _w3.eth.getBalance(actor):
+    if registration_required_gas * gas_price > _w3.eth.getBalance(car_address):
         return 'No enough funds to send transaction'
 
+    nonce = _w3.eth.getTransactionCount(car_address)
+    tx = {'gasPrice': gas_price, 'nonce': nonce}
 
-    try:
-        tx_hash = mgmt_contract.functions.registerCar().transact(tx)
-    except ValueError:
-        sys.exit("Already registered")
-
-    receipt = web3.eth.wait_for_transaction_receipt(_w3, tx_hash, 120, 0.1)
+    regTx = mgmt_contract.functions.registerCar().buildTransaction(tx)
+    signTx = _w3.eth.account.signTransaction(regTx, private_key)
+    txHash = _w3.eth.sendRawTransaction(signTx.rawTransaction)
+    receipt = web3.eth.wait_for_transaction_receipt(_w3, txHash, 120, 0.1)
 
     if receipt.status == 1:
-        return "Registered successfully"
-    
+        return 'Registered succsessfully'        
     else:
-        return "Registration failed"
+        return 'Car registration failed'
+
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -152,10 +199,32 @@ def transfer_battery_to_sc(w3: Web3, car_battery_id: str, sc_address: str):
 
     """
 
-    result = utils.change_owner(w3, car_battery_id, sc_address, ACCOUNT_DB_NAME)
+    data = utils.open_data_base(MGMT_CONTRACT_DB_NAME)
 
-    if 'failed' in result:
-        sys.exit("Something went wrong...")
+    if data is None:
+        return 'Cannot access management contract database'
+        
+    data = utils.open_data_base(ACCOUNT_DB_NAME)
+
+    if data is None:
+        return 'Cannot access account database'
+
+    private_key = data['key']
+    battery_mgmt_contract_addr = utils.get_battery_managment_contract_addr(w3)
+    battery_mgmt_contract = utils.init_battery_management_contract(w3, battery_mgmt_contract_addr)
+    car_address = w3.eth.account.privateKeyToAccount(private_key).address
+    gas_price = utils.get_actual_gas_price(w3)
+
+    nonce = w3.eth.getTransactionCount(car_address)
+    tx = {'gasPrice': gas_price, 'nonce': nonce, 'gas': 2204 * 68 + 21000}
+
+    reg_tx = battery_mgmt_contract.functions.transfer(sc_address, decode_hex(car_battery_id)).buildTransaction(tx)
+    sign_tx = w3.eth.account.signTransaction(reg_tx, private_key)
+    tx_hash = w3.eth.sendRawTransaction(sign_tx.rawTransaction)
+    receipt = web3.eth.wait_for_transaction_receipt(w3, tx_hash, 120, 0.1)
+
+    if receipt.status != 1:
+        sys.exit("The car does not own this battery!")
 
 
 def get_new_battery(car_account: str, car_battery_id: str, sc_battery_id) -> float:
@@ -188,15 +257,21 @@ def initiate_replacement(w3: Web3, car_battery_id: str, sc_battery_id: str) -> N
     sc_battery_id_path = f"firmware/{car_battery_id[:8]}.py"
     car_battery_id_path = f"firmware/{sc_battery_id[:8]}.py"
 
+    print("Verifying battery...")
+
     data = utils.verify_battery(w3, sc_battery_id_path)
 
     if not data[0]:
         sys.exit("The battery is fake")
 
-    data = utils.open_data_base(ACCOUNT_DB_NAME)
-    actor = data['account']
+    sys.stdout.write("\033[F") #back to previous line
+    sys.stdout.write("\033[K") #clear line
 
-    ask_for_replacement(car_battery_id, sc_battery_id, actor)
+    print(f"Verifying battery...{bcolors.OKGREEN}Success{bcolors.ENDC}", u'\u2713')
+
+    print("Asking service center for replacement...")
+
+    ask_for_replacement(car_battery_id, sc_battery_id, get_car_account_from_db(w3))
 
     message = utils.open_data_base('replacement.json')
 
@@ -206,11 +281,39 @@ def initiate_replacement(w3: Web3, car_battery_id: str, sc_battery_id: str) -> N
     if not message['approved']:
         sys.exit(message['error'])
     
+    sys.stdout.write("\033[F") #back to previous line
+    sys.stdout.write("\033[K") #clear line
+
+    print(f"Asking service center for replacement...{bcolors.OKGREEN}Approved{bcolors.ENDC}", u'\u2713')
+
+    print("Getting address of the service center...")
+    
     sc_address = get_sc_address()
 
+    sys.stdout.write("\033[F") #back to previous line
+    sys.stdout.write("\033[K") #clear line
+
+    print(f"Getting address of the service center...{bcolors.OKGREEN}Success{bcolors.ENDC}", u'\u2713')
+
+    print("Transferring battery to the service center...")
+
     transfer_battery_to_sc(w3, car_battery_id, sc_address)
+
+    sys.stdout.write("\033[F") #back to previous line
+    sys.stdout.write("\033[K") #clear line
+
+    print(f"Transferring battery to the service center...{bcolors.OKGREEN}Success{bcolors.ENDC}", u'\u2713')
+
+    print("Waiting for new battery installation...")
+
+    result = get_new_battery(get_car_account_from_db(w3), car_battery_id, sc_battery_id)
+
+    sys.stdout.write("\033[F") #back to previous line
+    sys.stdout.write("\033[K") #clear line
+
+    print(f"Battery was installed...{bcolors.OKGREEN}Success{bcolors.ENDC}", u'\u2713')
     
-    return get_new_battery(actor, car_battery_id, sc_battery_id)
+    return result
 
 
 def main():
@@ -223,7 +326,10 @@ def main():
     args = parser.parse_args()
 
     if args.new:
-        print(utils.create_new_account(w3, args.new, ACCOUNT_DB_NAME))
+        new_car_account(w3)
+    
+    elif args.account:
+        print(get_car_account_from_db(w3))
 
     elif args.reg:
         print(register_car(w3))
@@ -236,10 +342,9 @@ def main():
         print(f"Vendor name: {data[3]}")
     
     elif args.initiate_replacement:
-        print("Cost of work:")
-        print(f"{initiate_replacement(w3, args.initiate_replacement[0], args.initiate_replacement[1])} eth")
+        cost = initiate_replacement(w3, args.initiate_replacement[0], args.initiate_replacement[1])
+        print(f"Cost of work: {cost} eth")
 
 
 if __name__ == "__main__":
     main()
-    

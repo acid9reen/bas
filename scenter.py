@@ -133,10 +133,10 @@ def get_work_cost(car_battery_id, sc_battery_id) -> float:
 
 
 def transfer_battery_to_car(w3: Web3, car_account: str, car_battery_id: str, sc_battery_id) -> float:
-    result = utils.change_owner(w3, car_battery_id, car_account, ACCOUNT_DB_NAME)
+    result = utils.change_owner(w3, sc_battery_id, car_account, ACCOUNT_DB_NAME)
 
     if 'failed' in result:
-        sys.exit("Something went wrong...")
+        sys.exit("Service center does not own this battery!")
 
     return get_work_cost(car_battery_id, sc_battery_id)
 
