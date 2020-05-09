@@ -87,7 +87,7 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        '--new', action='store_true', required=False,
+        '--new', type=str, required=False,
         help='Generate a new account for the particular AGV'
     )
 
