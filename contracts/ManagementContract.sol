@@ -115,7 +115,7 @@ contract ManagementContract is Ownable {
     // Registers in the system the address of the sender of the transaction, an electric vehicle.
     // Registration only occurs if this address has not already been registered
     // as a service center or electric car.
-    function registerCar() public payable{
+    function registerCar() public{
         require(!cars[msg.sender], "Car have been already registered");
         require(!serviceCenters[msg.sender], "Car have been already registered");
 

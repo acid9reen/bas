@@ -56,7 +56,7 @@ contract BatteryManagement is Ownable, BasicNFToken{
     //_tokenId - battery identifier
     function transfer(address _to, bytes20 _tokenId) public{
         require(msg.sender == tokenIdToOwner[_tokenId], "You do not have enough permissions");
-        require(carHasBattery[_to] != true, "Car already has a battery");
+        //require(carHasBattery[_to] != true, "Car already has a battery");
 
         _transfer(msg.sender, _to, _tokenId);
         carHasBattery[_to] = true;
