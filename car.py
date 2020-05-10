@@ -109,7 +109,7 @@ def register_car(_w3: Web3):
     receipt = web3.eth.wait_for_transaction_receipt(_w3, txHash, 120, 0.1)
 
     if receipt.status == 1:
-        return 'Registered succsessfully'        
+        return 'Registered successfully'        
     else:
         return 'Car registration failed'
 
@@ -134,7 +134,7 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        '--new', type=str, required=False,
+        '--new', action='store_true', required=False,
         help='Generate a new account for the particular AGV'
     )
 
