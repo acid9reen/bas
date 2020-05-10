@@ -106,7 +106,16 @@ def register_scenter(_w3: Web3):
 
 def approve_replacement(w3: Web3, car_battery_id: str, sc_battery_id: str, car_address: str) -> None:
     """
+    Approve battery replacement if battery is successfully verified
+    Create a json file with approval stutus and maybe error
 
+    :param Web3 w3: Web3 instance
+    :param str car_battery_id: Car's battery id
+    :param str sc_battery_id: Service center's battery id
+    :param str car_address: Car's address
+
+    :return: Nothing
+    :rtype: None
     """
 
     sc_battery_id_path = f"firmware/{car_battery_id[:8]}.py"
@@ -124,15 +133,44 @@ def approve_replacement(w3: Web3, car_battery_id: str, sc_battery_id: str, car_a
         
 
 def get_addr() -> str:
+    """
+    Get service center's address
+
+    :return: Service center's address
+    :rtype: str 
+    """
+
     data = utils.open_data_base(ACCOUNT_DB_NAME)
     return data['account']
 
 
-def get_work_cost(car_battery_id, sc_battery_id) -> float:
+def get_work_cost(car_battery_id: str, sc_battery_id: str) -> float:
+    """
+    Calculate the cost of battery replacement based on its characteristics
+
+    :param str car_battery_id: Car's battery id
+    :param str sc_battery_id: Service center's battery id
+
+    return: Cost of replacement
+    rtype: float
+    """
+
     return 0.005
 
 
 def transfer_battery_to_car(w3: Web3, car_account: str, car_battery_id: str, sc_battery_id) -> float:
+    """
+    Transfer battery to car
+
+    :param Web3 w3: Web3 instance
+    :param str car_account: Car's address
+    :param str car_battery_id: Car's battery id
+    :param str sc_battery_id: Service centers's battery id
+
+    return: Cost of battery replacement
+    rtype: float
+    """
+
     result = utils.change_owner(w3, sc_battery_id, car_account, ACCOUNT_DB_NAME)
 
     if 'failed' in result:

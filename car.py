@@ -114,7 +114,6 @@ def register_car(_w3: Web3):
         return 'Car registration failed'
 
 
-
 def create_parser() -> argparse.ArgumentParser:
     """
     Create cli argument parser
@@ -188,6 +187,13 @@ def ask_for_replacement(car_battery_id: str, sc_battery_id: str, car_address: st
 
 
 def get_sc_address() -> str:
+    """
+    Get address of the service center
+
+    return: Service center's address
+    rtype: str
+    """
+
     command = "python scenter.py --get_address".split(' ')
     result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
@@ -196,7 +202,14 @@ def get_sc_address() -> str:
 
 def transfer_battery_to_sc(w3: Web3, car_battery_id: str, sc_address: str):
     """
+    Transfer battery to service center
 
+    :param Web3 w3: Web3 instance
+    :param str car_battery_id: Car's battery id
+    :param str sc_battery_id: Service centers's battery id
+
+    return: Nothing
+    rtype: None
     """
 
     data = utils.open_data_base(MGMT_CONTRACT_DB_NAME)
