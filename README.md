@@ -6,13 +6,7 @@ Battery authentication system - это программное обеспечен
 1. [Установите python](https://www.python.org/)
 2. [Установите go-ethereum](https://github.com/ethereum/go-ethereum)
 
-3. Установите компилятор Solidity
-
-```bash
-python -m solc.install v0.6.4
-```
-
-4. Скачайте исходный код с помощью HTTPS
+3. Скачайте исходный код с помощью HTTPS
 
 ```bash
 git clone https://gitlab.com/acid9reen/bas.git
@@ -24,10 +18,16 @@ git clone https://gitlab.com/acid9reen/bas.git
 git clone git@gitlab.com:acid9reen/bas.git
 ```
 
-5. Установите используемые проектом библиотеки для Python
+4. Установите используемые проектом библиотеки для Python
 
 ```bash
 pip install -r requirements.txt
+```
+
+5. Установите компилятор Solidity
+
+```bash
+python -m solc.install v0.6.4
 ```
 
 ## Использование
