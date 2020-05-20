@@ -3,6 +3,7 @@ import argparse
 import web3
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
+from web3.logs import DISCARD
 from eth_utils import decode_hex
 
 # Project modules
@@ -53,7 +54,7 @@ def register_vendor(_w3: Web3, _name: str, _deposit: float):
             receipt = web3.eth.wait_for_transaction_receipt(_w3, tx_hash, 120, 0.1)
 
             if receipt.status == 1:
-                return mgmt_contract.events.Vendor().processReceipt(receipt)[0]['args']['tokenId']
+                return mgmt_contract.events.Vendor().processReceipt(receipt, errors=DISCARD)[0]['args']['tokenId']
 
         except ValueError:
             return "Failed. The vendor name is not unique."
