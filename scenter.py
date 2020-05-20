@@ -6,6 +6,8 @@ from web3.middleware import geth_poa_middleware
 
 # Project modules
 import utils
+from TextColor.color import bcolors
+
 
 URL = "http://127.0.0.1:8545"
 
@@ -79,29 +81,29 @@ def register_scenter(_w3: Web3):
     data = utils.open_data_base(ACCOUNT_DB_NAME)
 
     if data is None:
-        sys.exit("Cannot access account database")
+        sys.exit(f"{bcolors.FAIL}Cannot access account database{bcolors.ENDC}")
     
     actor = data['account']
 
     tx = {'from': actor, 'gasPrice': utils.get_actual_gas_price(_w3)}
 
     if REGISTRATION_REQUIRED_GAS * tx['gasPrice'] > _w3.eth.getBalance(actor):
-        sys.exit("No enough funds to send transaction")
+        sys.exit(f"{bcolors.FAIL}No enough funds to send transaction{bcolors.ENDC}")
     
     utils.unlock_account(_w3, actor, data['password'])
 
     try:
         tx_hash = mgmt_contract.functions.registerServiceCenter().transact(tx)
     except ValueError:
-        sys.exit("Already registered")
+        sys.exit(f"{bcolors.FAIL}Already registered{bcolors.ENDC}")
 
     receipt = web3.eth.wait_for_transaction_receipt(_w3, tx_hash, 120, 0.1)
 
     if receipt.status == 1:
-        return "Registered successfully"
+        return f"{bcolors.OKGREEN}Registered successfully{bcolors.ENDC}"
     
     else:
-        return "Registration failed"
+        return f"{bcolors.FAIL}Registration failed{bcolors.ENDC}"
 
 
 def approve_replacement(w3: Web3, car_battery_id: str, sc_battery_id: str, car_address: str) -> None:
@@ -174,7 +176,7 @@ def transfer_battery_to_car(w3: Web3, car_account: str, car_battery_id: str, sc_
     result = utils.change_owner(w3, sc_battery_id, car_account, ACCOUNT_DB_NAME)
 
     if 'failed' in result:
-        sys.exit("Service center does not own this battery!")
+        sys.exit(f"{bcolors.FAIL}Service center does not own this battery!{bcolors.ENDC}")
 
     return get_work_cost(car_battery_id, sc_battery_id)
 
@@ -211,7 +213,7 @@ def main() -> None:
         print(transfer_battery_to_car(w3, args.transfer_battery_to_car[0], args.transfer_battery_to_car[1], args.transfer_battery_to_car[2]))
 
     else:
-        sys.exit("No parameters provided")
+        sys.exit(f"{bcolors.FAIL}No parameters provided{bcolors.ENDC}")
 
 
 if __name__ == "__main__":
