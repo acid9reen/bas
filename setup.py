@@ -7,6 +7,8 @@ from web3.middleware import geth_poa_middleware
 
 # Project modules
 import utils
+from TextColor.color import bcolors
+
 
 URL = "http://127.0.0.1:8545"
 
@@ -72,9 +74,9 @@ def set_fee(_w3: Web3, _fee: float):
     result = receipt.status
 
     if result == 1:
-        return "Fee setting was successfull"
+        return f"{bcolors.OKGREEN}Fee setting was successfull{bcolors.ENDC}"
     else:
-        return "Fee setting failed"
+        return f"{bcolors.FAIL}Fee setting failed{bcolors.ENDC}"
 
 
 def setup(_w3: Web3, _service_fee: float) -> Union[dict, None]:
@@ -167,19 +169,21 @@ def main() -> None:
 
     if args.new:
         print(utils.create_new_account(w3, args.new, ACCOUNT_DB_NAME))
+
     elif args.setup:
         contract_addresses = setup(w3, args.setup)
 
         if contract_addresses is None:
-            print('Contracts deployment and configuration failed')
+            print(f'{bcolors.FAIL}Contracts deployment and configuration failed{bcolors.ENDC}')
         else:
             for key, value in contract_addresses.items():
                 print(f"{key}: {value}")
     
     elif args.setfee:
         print(set_fee(w3, args.setfee))
+
     else:
-        sys.exit("No parameters provided")
+        sys.exit(f"{bcolors.FAIL}No parameters provided{bcolors.ENDC}")
 
 
 if __name__ == '__main__':

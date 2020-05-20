@@ -9,6 +9,9 @@ from web3._utils.threads import Timeout
 from solcx import compile_files
 from eth_utils import decode_hex
 
+# Project modules
+from TextColor.color import bcolors
+
 
 MGMT_CONTRACT_DB_NAME = 'database.json'
 MGMT_CONTRACT_SRC_PATH = r"./contracts/ManagementContract.sol"
@@ -160,7 +163,7 @@ def create_new_account(_w3: Web3, _password: str, _file_name: str) -> str:
     data = {"account": account, "password": _password}
     write_data_base(data, _file_name)
 
-    return data['account']
+    return f"{bcolors.HEADER}{data['account']}{bcolors.ENDC}"
 
 
 def open_data_base(_file_name: str) -> Union[dict, None]:
@@ -270,7 +273,7 @@ def get_battery_managment_contract_addr(_w3: Web3) -> str:
         mgmt_contract = init_management_contract(_w3)
         addr = mgmt_contract.functions.getBatteryManagmentAddr().call()
     except:
-        sys.exit("Failed")
+        sys.exit(f"{bcolors.FAIL}Failed{bcolors.ENDC}")
 
     return addr
 
@@ -314,7 +317,7 @@ def get_battery_info(_path: str) -> dict:
     if os.path.exists(f"{_path}"):
         subprocess.run(["python", f"{_path}", "--get"])
     else:
-        sys.exit("Battery does not exist")
+        sys.exit(f"{bcolors.FAIL}Battery does not exist{bcolors.ENDC}")
 
     return open_data_base(f"{_path[:-3]}_data.json")
 
@@ -333,7 +336,7 @@ def verify_battery(_w3: Web3, _path: str):
     battery_info = get_battery_info(_path)
 
     if battery_info is None:
-        sys.exit("The battery does not exist")
+        sys.exit(f"{bcolors.FAIL}The battery does not exist{bcolors.ENDC}")
 
     battery_mgmt_addr = get_battery_managment_contract_addr(_w3)
     battery_mgmt_contract = init_battery_management_contract(_w3, battery_mgmt_addr)

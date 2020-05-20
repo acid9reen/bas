@@ -7,6 +7,7 @@ from eth_utils import decode_hex
 
 # Project modules
 import utils
+from TextColor.color import bcolors
 
 
 URL = "http://127.0.0.1:8545"
@@ -22,7 +23,7 @@ DATABASE = utils.open_data_base(MGMT_CONTRACT_DB_NAME)
 
 # Create empty dict for database dump
 if DATABASE is None:
-    sys.exit("Setup hasn't been done")
+    sys.exit(f"{bcolors.FAIL}Setup hasn't been done{bcolors.ENDC}")
 
 
 def register_vendor(_w3: Web3, _name: str, _deposit: float):
@@ -190,7 +191,7 @@ def get_deposit(_w3: Web3):
         return _w3.fromWei(deposit, 'ether')
 
     except:
-        sys.exit("The vendor doesn't exist")    
+        sys.exit(f"{bcolors.FAIL}The vendor doesn't exist{bcolors.ENDC}")    
 
 
 def del_hex_prefix(_str: str) -> str:
@@ -234,9 +235,9 @@ def change_owner(_w3: Web3, _battery_id: str, _new_owner: str) -> str:
     result = receipt.status
 
     if result == 1:
-        return "Ownership change was successfull"
+        return f"Ownership change was {bcolors.OKGREEN}successfull{bcolors.ENDC}"
     else:
-        return "Ownership change failed"
+        return f"{bcolors.FAIL}Ownership change failed{bcolors.ENDC}"
 
 
 def main() -> None:
@@ -251,7 +252,7 @@ def main() -> None:
     config = utils.open_data_base("account.json")
 
     if config is None:
-        sys.exit("Can't access account database")
+        sys.exit(f"{bcolors.FAIL}Can't access account database{bcolors.ENDC}")
 
     actor = w3.toChecksumAddress(config['account'])
     gas_price =  utils.get_actual_gas_price(w3)
@@ -268,7 +269,7 @@ def main() -> None:
         result = register_vendor(w3, args.reg[0], w3.toWei(float(args.reg[1]), 'ether')) 
 
         if isinstance(result, bytes):
-            print(f'Success.\nVendor ID: {del_hex_prefix(w3.toHex(result))}')
+            print(f'{bcolors.OKGREEN}Success{bcolors.ENDC}\nVendor ID: {bcolors.HEADER}{del_hex_prefix(w3.toHex(result))}{bcolors.ENDC}')
         else:
             sys.exit(result)
     
@@ -282,22 +283,22 @@ def main() -> None:
 
         if isinstance(result, list):
             for bat_id in result:
-                print(f'Created battery with id: {bat_id[2:]}')
+                print(f'Created battery with id: {bcolors.HEADER}{bat_id[2:]}{bcolors.ENDC}')
 
     elif args.regfee:
-        print(f'Vendor registration fee: {get_fee(w3) * 1000} eth')
+        print(f'Vendor registration fee: {bcolors.HEADER}{get_fee(w3) * 1000}{bcolors.ENDC} eth')
     
     elif args.batfee:
-        print(f'Battery registration fee: {get_fee(w3)} eth')
+        print(f'Battery registration fee: {bcolors.HEADER}{get_fee(w3)}{bcolors.ENDC} eth')
 
     elif args.deposit:
-        print(f"Vendor deposit: {get_deposit(w3)} eth")
+        print(f"Vendor deposit: {bcolors.HEADER}{get_deposit(w3)}{bcolors.ENDC} eth")
 
     elif args.owner:
         print(change_owner(w3, args.owner[0], args.owner[1]))
 
     else:
-        sys.exit("No parameters provided")
+        sys.exit(f"{bcolors.FAIL}No parameters provided{bcolors.ENDC}")
 
 
 if __name__ == "__main__":

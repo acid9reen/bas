@@ -10,6 +10,7 @@ from eth_utils import decode_hex
 
 # Project modules
 import utils
+from TextColor.color import bcolors
 
 URL = "http://127.0.0.1:8545"
 ACCOUNT_DB_NAME = 'car.json'
@@ -19,18 +20,7 @@ CONFIG = utils.open_data_base(ACCOUNT_DB_NAME)
 DATABASE = utils.open_data_base(MGMT_CONTRACT_DB_NAME)
 
 if DATABASE is None:
-    sys.exit("Setup hasn't been done")
-
-
-class bcolors:
-	HEADER = '\033[95m'
-	OKBLUE = '\033[94m'
-	OKGREEN = '\033[92m'
-	WARNING = '\033[93m'
-	FAIL = '\033[91m'
-	ENDC = '\033[0m'
-	BOLD = '\033[1m'
-	UNDERLINE = '\033[4m'
+    sys.exit(f"{bcolors.FAIL}Setup hasn't been done{bcolors.ENDC}")
 
 
 def generate_private_key(_w3: Web3) -> str:
@@ -61,7 +51,7 @@ def new_car_account(_w3: Web3) -> None:
     privateKey = generate_private_key(_w3)
     data = {"key": privateKey}
     utils.write_data_base(data, ACCOUNT_DB_NAME)
-    print(_w3.eth.account.privateKeyToAccount(data['key']).address)
+    print(f"{bcolors.HEADER}{_w3.eth.account.privateKeyToAccount(data['key']).address}{bcolors.ENDC}")
 
 
 def get_car_account_from_db(_w3: Web3) -> None:
@@ -183,7 +173,7 @@ def ask_for_replacement(car_battery_id: str, sc_battery_id: str, car_address: st
             ]
         )
     else:
-        sys.exit("The asked service center does not exists")
+        sys.exit(f"{bcolors.FAIL}The asked service center does not exists{bcolors.ENDC}")
 
 
 def get_sc_address() -> str:
@@ -237,7 +227,7 @@ def transfer_battery_to_sc(w3: Web3, car_battery_id: str, sc_address: str):
     receipt = web3.eth.wait_for_transaction_receipt(w3, tx_hash, 120, 0.1)
 
     if receipt.status != 1:
-        sys.exit("The car does not own this battery!")
+        sys.exit(f"{bcolors.FAIL}The car does not own this battery!{bcolors.ENDC}")
 
 
 def get_new_battery(car_account: str, car_battery_id: str, sc_battery_id) -> float:
@@ -275,7 +265,7 @@ def initiate_replacement(w3: Web3, car_battery_id: str, sc_battery_id: str) -> N
     data = utils.verify_battery(w3, sc_battery_id_path)
 
     if not data[0]:
-        sys.exit("The battery is fake")
+        sys.exit(f"{bcolors.FAIL}The battery is fake{bcolors.ENDC}")
 
     sys.stdout.write("\033[F") #back to previous line
     sys.stdout.write("\033[K") #clear line
@@ -289,7 +279,7 @@ def initiate_replacement(w3: Web3, car_battery_id: str, sc_battery_id: str) -> N
     message = utils.open_data_base('replacement.json')
 
     if message is None:
-        sys.exit("Somethong went wrong...")
+        sys.exit(f"{bcolors.FAIL}Somethong went wrong...{bcolors.ENDC}")
     
     if not message['approved']:
         sys.exit(message['error'])
