@@ -27,7 +27,7 @@ pip install -r requirements.txt
 5. Установите компилятор Solidity
 
 ```bash
-python -m solc.install v0.6.4
+python -m solcx.install v0.6.4
 ```
 
 ## Использование
