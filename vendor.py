@@ -236,7 +236,7 @@ def change_owner(_w3: Web3, _battery_id: str, _new_owner: str) -> str:
     result = receipt.status
 
     if result == 1:
-        return f"Ownership change was {bcolors.OKGREEN}successfull{bcolors.ENDC}"
+        return f"{bcolors.OKGREEN}Ownership change was successfull{bcolors.ENDC}"
     else:
         return f"{bcolors.FAIL}Ownership change failed{bcolors.ENDC}"
 

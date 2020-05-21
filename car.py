@@ -74,12 +74,12 @@ def register_car(_w3: Web3):
     data = utils.open_data_base(MGMT_CONTRACT_DB_NAME)
 
     if data is None:
-        return 'Cannot access management contract database'
+        return f'{bcolors.FAIL}Cannot access management contract database{bcolors.ENDC}'
         
     data = CONFIG
 
     if data is None:
-        return 'Cannot access account database'
+        return f'{bcolors.FAIL}Cannot access account database{bcolors.ENDC}'
 
     private_key = data['key']
     mgmt_contract = utils.init_management_contract(_w3)
@@ -99,9 +99,9 @@ def register_car(_w3: Web3):
     receipt = web3.eth.wait_for_transaction_receipt(_w3, txHash, 120, 0.1)
 
     if receipt.status == 1:
-        return 'Registered successfully'        
+        return f'{bcolors.OKGREEN}Registered successfully{bcolors.ENDC}'        
     else:
-        return 'Car registration failed'
+        return f'{bcolors.FAIL}Car registration failed{bcolors.ENDC}'
 
 
 def create_parser() -> argparse.ArgumentParser:
