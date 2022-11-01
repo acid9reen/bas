@@ -36,7 +36,7 @@ pylint==2.4.4
 pypiwin32==223
 pyrsistent==0.16.0
 pysha3==1.0.2
-pywin32==227
+pywin32==301
 requests==2.23.0
 rlp==1.2.0
 semantic-version==2.8.4
