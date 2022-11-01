@@ -28,7 +28,7 @@ multiaddr==0.0.9
 mypy-extensions==0.4.3
 netaddr==0.7.19
 parsimonious==0.8.1
-protobuf==3.11.3
+protobuf==3.18.3
 py-ecc==4.0.0
 py-solc-x==0.8.1
 pycryptodome==3.9.7
